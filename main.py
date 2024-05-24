@@ -212,3 +212,95 @@ for key, component in aircraft.items():
     component['Cf'] = component['Percent_laminar'] * Cf_laminar(cut) + (1-component['Percent_laminar']) * Cf_turbulent(cut,Mach)
     print(f'Cf do {key}: {component["Cf"]:.4f}\n')
 
+# Form Factor drag
+
+M = aircraft['definitions']['V_cruise']/vel_som
+
+aircraft = compute_FF(aircraft, M)
+
+print(f"""
+Wing form factor: {aircraft["wing"]["FF"]:.4f}
+Horizontal stabilizer form factor:  {aircraft["ht"]["FF"]:.4f}
+Vertical stabilizer form factor: {aircraft["vt"]["FF"]:.4f} 
+Fuselage form factor: {aircraft["fus"]["FF"]:.4f}
+""")
+
+# Interference drag
+
+aircraft['wing']['Q_int'] = 1
+aircraft['ht']['Q_int'] = 1.05
+aircraft['vt']['Q_int'] = 1.05
+aircraft['fus']['Q_int'] = 1
+
+# Miscelaneos drag due fuselage upsweep
+
+mu = np.arctan(631/8656)
+Amax = np.pi*0.8**2
+
+Cd_misc = 3.83*mu**2.5*Amax / aircraft['wing']['S']
+
+print(f'Cd de miscelânia = {Cd_misc:.4f}')
+
+# Compute total parasite drag
+
+Cd_p = 0
+
+for component, values in aircraft.items():
+    if 'Cf' in values:
+        Cd_c = values["Cf"]*values['FF']*values['Q_int']*values['S_wet'] / aircraft["wing"]["S"]
+        print(f'Componente de arrasto parasita em {component} vale = {Cd_c:.4f}\n')
+        Cd_p += Cd_c
+
+print(f'Arrasto parasita total sem componente de miscelânia = {Cd_p:.4f}\n')
+
+Cd_p += Cd_misc
+
+print(f'Arrasto parasita total com componente de miscelânia = {Cd_p:.4f}\n')
+
+#####################################################################################################################################
+
+## Drag x velocity curves ##
+
+# Parasite drag
+
+vector_v = np.linspace(15,1.4 * aircraft['definitions']['V_cruise'], 80)
+
+rho_SL = isa_sealevel.density[0]
+
+D_p = 0.5 * rho_SL * vector_v ** 2 * aircraft['wing']['S'] * Cd_p
+
+# Induced drag
+
+AR = aircraft['wing']['b']**2 / aircraft['wing']['S']
+e = acd.compute_oswald(AR)
+W = aircraft['definitions']['MTOW']
+S = aircraft['wing']['S']
+
+CL_for_Cdi_induced = 2 * W * g / (rho_SL * vector_v ** 2 * S)
+
+K = 1 / (np.pi * AR * e)
+
+Cd_i = K * CL_for_Cdi_induced ** 2
+
+D_i = 0.5 * rho_SL * vector_v ** 2 * aircraft['wing']['S'] * Cd_i
+
+print(f'Alongamento = {AR:.2f}')
+print(f'Coeficiente de Oswald = {e:.2f}')
+print(f'Fator k = {K:.4f}')
+print(f'CDi = {Cd_i}')
+
+# Plot
+
+plt.figure()
+plt.plot(vector_v, D_p, 'b', label='Parasite drag')
+plt.plot(vector_v, D_i, 'r', label='Induced drag')
+plt.plot(vector_v, D_p + D_i, 'g', label='Total drag')
+plt.xlabel('Velocity CAS [m/s]')
+plt.ylabel('Drag [N]')
+plt.grid()
+plt.legend()
+
+#####################################################################################################################################
+
+# Constraint analysis
+
