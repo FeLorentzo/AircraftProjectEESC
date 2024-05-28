@@ -1,6 +1,11 @@
 import numpy as np
 from ambiance import Atmosphere
 
+# TODO: 
+# - Implementar decolagem
+# - Implementar pouso
+# - Compatibilizar input com dados do dict Aircraft
+
 # Inputs
 dados_aeronave = {
     "AR": 8.90,
@@ -36,6 +41,8 @@ regime_long_range = {
     "dH_step_climb": 2000
 }
 
+def decolagem():
+   raise NotImplementedError
 
 def subida(dados_aeronave: dict, h0:float, hf:float, W_fuel_init:float|None = None, vmin:float=100.0, vmax:float= 300.0, dT:float = 0) -> tuple:
 
@@ -340,4 +347,14 @@ def loitter():
 
     print('gasto total de combustível [N] =', Win-W)
 
+def pouso():
+   raise NotImplementedError
 
+
+def main()->None:
+   '''Main code'''
+
+
+
+if __name__ == '__main__':
+   main()
