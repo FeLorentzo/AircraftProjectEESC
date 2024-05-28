@@ -81,3 +81,93 @@ def compute_FF(aircraft, M):
             aircraft['fus']['FF'] = 0.9 + 5 / (f ** 1.5) + f / 400
     
     return aircraft
+
+
+def compute_oswald(AR, Lambda = 0):
+    if Lambda >= np.pi/6:
+        return
+    elif Lambda == 0:
+        return 1.78 * (1 - 0.045*AR**(0.68)) - 0.64
+    else:
+        val_max = 4.61 * (1 - 0.045*AR**(0.68))*(np.cos(Lambda))**0.15 - 3.1
+        val_min = 1.78 * (1 - 0.045*AR**(0.68)) - 0.64
+        Lambda_min = 0
+        Lambda_max = np.pi/6
+        return np.interp(Lambda, [Lambda_min, Lambda_max], [val_min, val_max])
+    
+    
+def T_W_takeoff(takeoff_distance, Clmax, Wing_load_vector):
+    '''
+    beta:   take off weight / MTOW
+    K:      V_takeoff / V_stall
+    alpha:  T_i / T_nominal
+    S_g:    Takeoff distance
+    CL_max
+    W_S:    Wing load  
+    '''
+    
+    beta = 0.97
+    K = 1.2
+    alpha = 1
+    rho_SL = 1.225
+    S_g = takeoff_distance 
+    W_S = Wing_load_vector
+    
+    return  ((beta**2 * K**2)/(alpha*9.81*S_g*rho_SL*Clmax))*(W_S)   
+    
+    
+def T_W_climb(V_climb, K, Cd0, RS, wing_load_factor):
+    '''
+    beta:    climb weight / MTOW
+    alpha:   T_i / T_nominal
+    RS:   raise of climb
+    q:       dynamic pressure
+    K:       1/(pi * e * AR) 
+    V_climb
+    Cd0
+    W_S:    Wing load
+    '''
+    beta = 0.955
+    alpha = 0.9
+    rho_SL = 1.225
+    q = 0.5 * rho_SL * V_climb ** 2
+    W_S = wing_load_factor
+    
+    return (beta/alpha)*((Cd0*q/beta)*(1/W_S) + (beta*K/q)*W_S + ((RS)/(V_climb)))
+
+
+def T_W_cruise(V_cruise, Cd0, K, wing_load_vector):
+    '''
+    beta:    climb weight / MTOW
+    alpha:   T_i / T_nominal
+    q:       dynamic pressure
+    K:       1/(pi * e * AR) 
+    Cd0
+    W_S:    Wing load
+    '''
+    
+    beta = 0.87
+    alpha = 0.5
+    rho_SL = 1.225
+    q = 0.5 * rho_SL * V_cruise ** 2
+    W_S = wing_load_vector
+    
+    return (beta/alpha)*((Cd0*q/beta)*(1/W_S) + (beta*K/q)*W_S)
+
+
+def T_W_pouso(landing_distance, Clmax):
+    '''
+    beta:    climb weight / MTOW
+    K:       V_landing / V_stall
+    mu:      friction Coulomb coefficient
+    S_l:     Landing distance
+    Clmax
+    '''
+    beta = 0.853
+    K = 1.3
+    mu = 0.3
+    S_l = landing_distance
+    rho_SL = 1.225
+    
+    
+    return (S_l*9.81*mu*rho_SL*Clmax)/(beta*K**2)
