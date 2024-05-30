@@ -14,5 +14,3 @@ The tools of the project. Inside of that, we put the desirable files with useful
 ## AircraftConceptualDesign_Colab.ipynb
 
 Synthesyses all of the functions and explainings on code, using the UI of Google Collaboratory. 
-
-##  francais grammaire 
