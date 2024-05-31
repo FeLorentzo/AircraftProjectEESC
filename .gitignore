@@ -1,2 +1,6 @@
 desempenho.py
 ambiance.py
+.idea
+.venv
+.vscode
+__pycache__
