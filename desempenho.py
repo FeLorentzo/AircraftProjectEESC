@@ -113,8 +113,10 @@ def decolagem(dados_aeronave: dict, decolagem: dict):
     ST = np.sqrt(R**2 - (R - h_R)**2)
 
     # Climb
-
-    SC = (h_obstacle - h_R)/np.tan(np.rad2deg(gamma))
+    if h_R > h_obstacle:
+        SC = 0
+    else:
+        SC = (h_obstacle - h_R)/np.tan(np.rad2deg(gamma))
 
     return [SG, ST, SC]
 
