@@ -34,6 +34,19 @@ condicoes = {
     "H_alternativa": 2000, # ft
 }
 
+decolagem = {
+   'gamma_climb': 1,
+    'Cl_run': 0.1, 
+    'Cl_max': 2, 
+    'mi': 0.01, 
+    'rho': 1.225, 
+    'g': 9.81, 
+    'V_i': 0, 
+    'V_f': float, 
+    'V_stall': float, 
+    'h_obstacle': float
+}
+
 # Outros
 regime_long_range = {
     "M": 0.79,
@@ -41,8 +54,69 @@ regime_long_range = {
     "dH_step_climb": 2000
 }
 
-def decolagem():
-   raise NotImplementedError
+def decolagem(dados_aeronave: dict, decolagem: dict):
+    '''
+    Implementação baseada na teoria apresentada por Raymer.
+    Feita de modo a ser compatível com a FAR 23.
+
+    Inputs:
+    dados_aeronave (dict): Dicionário contendo os dados da aeronave, incluindo peso, área da asa, etc.
+    gamma_climb (float): Ângulo de subida em radianos.
+    Cl_run (float): Coeficiente de sustentação durante a corrida de decolagem.
+    Cl_max (float): Coeficiente de sustentação máximo.
+    mi (float): Coeficiente de atrito entre o trem de pouso e a superfície.
+    rho (float): Densidade do ar em kg/m^3.
+    g (float): Aceleração devido à gravidade em m/s^2.
+    V_i (float): Velocidade inicial de decolagem em m/s.
+    V_f (float): Velocidade final de decolagem em m/s.
+
+    Returns:
+    dists (list): Distancias.
+    '''
+
+    # Decomposição dos dados
+    S = dados_aeronave['S']
+    T = dados_aeronave['thrust']
+    W = dados_aeronave['MTOW']
+    CD0 = dados_aeronave['CD0']
+    K = 1/(np.pi() * dados_aeronave['AR'] * dados_aeronave['e'])
+    gamma = decolagem['gamma_climb']
+    CL = decolagem['Cl_run']
+    mi = decolagem['mi']
+    rho = decolagem['rho']
+    g = decolagem['g']
+    V_i = decolagem['V_i']
+    V_f = decolagem['V_f']
+    V_stall = decolagem['V_stall']
+    h_obstacle = decolagem['h_obstacle']
+
+    ### Aceleração (V: 0 - 1.1*V_stall)
+    # Modelo: Aceleração constante 
+    #   M.a(t) = T - D - mi.(W-L)
+    #   a(t) = g.[(T/W - mi) - (rho/(W/S)).(CD0 + K.CL**2  - mi.CL).V**2]
+    #   a(t) = g.[KT- KA.V**2]; KT=(T/W - mi); KA = (rho/(W/S)).(CD0 + K.CL**2  - mi.CL)
+
+    KT = T/W - mi
+    KA = (rho/(W/S)) * (CD0 + K.CL**2  - mi.CL)
+
+    #   s(t) = \int_{v_i}^{v_f}(V/a)dV = 0.5 * \int_{v_i}^{v_f}(1/a)d(V**2)
+    #   s(t) = (1/2gKA).ln((KT + KA.(V_f)**2)/(KT + KA.(V_i)**2))
+
+    SG = (1/(2*g*KA)) * np.ln((KT + KA*(V_f)**2)/(KT + KA*(V_i)**2))
+
+    ### Transição (V: 1.1*V_stall - 1.2*V_stall)
+    # Def: n = 1.2
+    n = 1.2
+    # n = 1 + V_tr**2/R.g
+    R = (1.2*V_stall**2)/(g*(n-1))
+    h_R = R * (1 - np.cos(np.deg2rad(gamma)))
+    ST = np.sqrt(R**2 - (R - h_R)**2)
+
+    # Climb
+
+    SC = (h_obstacle - h_R)/np.tan(np.rad2deg(gamma))
+
+    return [SG, ST, SC]
 
 def subida(dados_aeronave: dict, h0:float, hf:float, W_fuel_init:float|None = None, vmin:float=100.0, vmax:float= 300.0, dT:float = 0) -> tuple:
 
@@ -298,7 +372,6 @@ def descida(dados_aeronave: dict, h0:float, hf:float, W_fuel_init:float, vmin:fl
 
     return  tempo_total, consumo_descida, distancia_descida, h/0.3048
     
-
 def loitter():
 
     ## Dados da aeronave
