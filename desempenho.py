@@ -41,10 +41,22 @@ decolagem = {
     'mi': 0.01, 
     'rho': 1.225, 
     'g': 9.81, 
-    'V_i': 0, 
-    'V_f': float, 
+    'V_f': 100, 
+    'V_stall': 80, 
+    'h_obstacle': 100
+}
+
+pouso = {
+   'gamma_climb': 1,
+    'Cl_run': 0.1, 
+    'Cl_max': 2, 
+    'mi': 0.01, 
+    'mi_break': 0.5, 
+    'rho': 1.225, 
+    'g': 9.81, 
     'V_stall': float, 
-    'h_obstacle': float
+    'h_obstacle': float,
+    'reversores': float
 }
 
 # Outros
@@ -53,6 +65,7 @@ regime_long_range = {
     "RS_min": 500, # ft/min
     "dH_step_climb": 2000
 }
+
 
 def decolagem(dados_aeronave: dict, decolagem: dict):
     '''
@@ -85,7 +98,6 @@ def decolagem(dados_aeronave: dict, decolagem: dict):
     mi = decolagem['mi']
     rho = decolagem['rho']
     g = decolagem['g']
-    V_i = decolagem['V_i']
     V_f = decolagem['V_f']
     V_stall = decolagem['V_stall']
     h_obstacle = decolagem['h_obstacle']
@@ -97,12 +109,12 @@ def decolagem(dados_aeronave: dict, decolagem: dict):
     #   a(t) = g.[KT- KA.V**2]; KT=(T/W - mi); KA = (rho/(W/S)).(CD0 + K.CL**2  - mi.CL)
 
     KT = T/W - mi
-    KA = (rho/(W/S)) * (CD0 + K.CL**2  - mi.CL)
+    KA = (rho/(2*W/S)) * (CD0 + K.CL**2  - mi.CL)
 
     #   s(t) = \int_{v_i}^{v_f}(V/a)dV = 0.5 * \int_{v_i}^{v_f}(1/a)d(V**2)
     #   s(t) = (1/2gKA).ln((KT + KA.(V_f)**2)/(KT + KA.(V_i)**2))
 
-    SG = (1/(2*g*KA)) * np.ln((KT + KA*(V_f)**2)/(KT + KA*(V_i)**2))
+    SG = (1/(2*g*KA)) * np.ln((KT - KA*(V_f)**2)/(KT))
 
     ### Transição (V: 1.1*V_stall - 1.2*V_stall)
     # Def: n = 1.2
@@ -119,6 +131,7 @@ def decolagem(dados_aeronave: dict, decolagem: dict):
         SC = (h_obstacle - h_R)/np.tan(np.rad2deg(gamma))
 
     return [SG, ST, SC]
+
 
 def subida(dados_aeronave: dict, h0:float, hf:float, W_fuel_init:float|None = None, vmin:float=100.0, vmax:float= 300.0, dT:float = 0) -> tuple:
 
@@ -373,7 +386,8 @@ def descida(dados_aeronave: dict, h0:float, hf:float, W_fuel_init:float, vmin:fl
     consumo_descida = W0 - W
 
     return  tempo_total, consumo_descida, distancia_descida, h/0.3048
-    
+
+
 def loitter():
 
     ## Dados da aeronave
@@ -422,8 +436,53 @@ def loitter():
 
     print('gasto total de combustível [N] =', Win-W)
 
-def pouso():
-   raise NotImplementedError
+
+def pouso(dados_aeronave: dict, pouso: dict):
+    # Decomposição dos dados
+    S = dados_aeronave['S']
+    T = dados_aeronave['thrust']
+    W = dados_aeronave['MTOW']
+    CD0 = dados_aeronave['CD0']
+    K = 1/(np.pi() * dados_aeronave['AR'] * dados_aeronave['e'])
+
+    gamma = pouso['gamma_climb']
+    CL = pouso['Cl_run']
+    mi = pouso['mi']
+    mi_break = pouso['mi_break']
+    rho = pouso['rho']
+    g = pouso['g']
+    V_stall = pouso['V_stall']
+    h_obstacle = pouso['h_obstacle']
+    rev = pouso['reversores']
+
+    ### Flare
+    # Def: n = 1.2
+    n = 1.2
+    # n = 1 + V_tr**2/R.g
+    R = (1.2*V_stall**2)/(g*(n-1))
+    h_f = R * (1 - np.cos(np.deg2rad(gamma)))
+    SF = np.sqrt(R**2 - (R - h_f)**2)
+
+    ### Aproach
+    SA = (h_obstacle - h_f)/np.tan(np.rad2deg(gamma))
+
+    ### Ground roll
+    # Break free for 3s
+    V = 1.15 * V_stall
+    SFR =  0
+    KT = (0/W - mi)
+    KA = (rho/(2*W/S))*(CD0 + K.CL**2  - mi.CL)
+    for dt in np.diff(np.linspace(0,3,100)):
+        a = g * [KT - KA*V**2]
+        SFR = SFR + V * dt + 0.5 * a * dt**2
+        V = V + a * dt
+
+    KT = (rev * T/W - mi_break)
+    KA = (rho/(2*W/S))*(CD0 + K.CL**2  - mi_break.CL)
+    # Break roll
+    SB = (1/(2*g*KA)) * np.ln((KT)/(KT - KA*(V)**2))
+
+    return [SA, SF, SFR, SB]
 
 
 def main()->None:
