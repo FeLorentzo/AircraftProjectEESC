@@ -17,7 +17,8 @@ dados_aeronave = {
     "S": 92.5, # m**2
     "TSFC": 0.85/3600, # N/s/N
     "BOW": 320_300, # N peso da aeronave sem combustivel
-    'Cl_max' : 2
+    'Cl_max' : 2,
+    'n_max': 6
 }
 
 # Condições de voo
@@ -47,7 +48,7 @@ decolagem = {
 }
 
 pouso = {
-   'gamma_climb': 1,
+    'gamma_climb': 1,
     'Cl_run': 0.1, 
     'Cl_max': 2, 
     'mi': 0.01, 
@@ -57,6 +58,12 @@ pouso = {
     'V_stall': float, 
     'h_obstacle': float,
     'reversores': float
+}
+
+curvas = {
+    'rho': 1.225, 
+    'g': 9.81,
+    'V_max': 500,
 }
 
 # Outros
@@ -314,6 +321,57 @@ def cruseiro(dados_aeronave: dict,  h0:float, hf:float, W_fuel_init:float, mach:
       distancia_total = distancia_total + dist + dist_percorrida_subida # soma de distancias percorridas para cada velocidade ideal
 
 
+def curvas(dados_aeronave: dict, curva: dict):
+
+    # Decomposição dos dados
+    S = dados_aeronave['S']
+    T = dados_aeronave['thrust']
+    W = dados_aeronave['MTOW']
+    CD0 = dados_aeronave['CD0']
+    K = 1/(np.pi() * dados_aeronave['AR'] * dados_aeronave['e'])
+    CL_max = dados_aeronave['Cl_max']
+    n_max = dados_aeronave['n_max']
+
+    rho = curva['rho']
+    g = curva['g']
+    V_max = curva['V_max']
+
+    V = np.linspace(0, V_max*1.5,200)
+    q = 0.5 * rho * (V**2)
+   
+    ### Stall limit
+    # psi = g.sqrt(n**2 - 1)/V; n = L/W -> n = 0.5*rho*S*CL_max*V**2/W
+    # psi = g.sqrt((n/V)**2 - 1/V**2)  -> psi = g.sqrt((0.5*rho*S*CL_max*V/W)**2 - 1/V**2) 
+    L = q * S * CL_max
+    n_stall = L/W
+    psi_stall = g * np.sqrt(n_stall**2 - 1)/V
+
+    # Filtra os valores de psi maiores que zero e menores que o limite estrutural
+    msk = (psi_stall>0)*(n_stall<n_max)
+    psi_stall = psi_stall[msk]
+    V_stall   = V[msk]
+
+    corner_speed = V_stall.max()
+
+    ### Struvtural limit
+    psi_lim = g * np.sqrt(n_max**2 - 1)/V
+
+    msk = (V > corner_speed)
+    psi_lim = psi_lim[msk]
+    V_lim = V[msk]
+
+    ### Sustained turn envelope
+    # Raymer: Supondo alinhamento entre tração e arrasto, CL = nW/qS
+    wing_load = W/S
+    n_sust = np.sqrt((q/(K*wing_load))*(T/W - q*CD0/wing_load))
+    psi_sust = g * np.sqrt(n_sust**2 - 1)/V
+
+    msk = n_sust>0
+    n_sust = n_sust[msk]
+    psi_sust = psi_sust[msk]
+
+    return NotImplementedError
+
 def descida(dados_aeronave: dict, h0:float, hf:float, W_fuel_init:float, vmin:float=100.0, vmax:float= 300.0, dT:float = 15, dt:float = 1, Thrust_percent:float = 50):
     ## Dados da aeronave
     AR=dados_aeronave["AR"]
@@ -387,8 +445,8 @@ def descida(dados_aeronave: dict, h0:float, hf:float, W_fuel_init:float, vmin:fl
 
     return  tempo_total, consumo_descida, distancia_descida, h/0.3048
 
-
-def loitter():
+# TErminar
+def loitter(dados_aeronave):
 
     ## Dados da aeronave
     AR= dados_aeronave["AR"]
