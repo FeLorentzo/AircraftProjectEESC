@@ -1,0 +1,5 @@
+.vscode
+.venv
+.idea
+ambiance.py
+__pycache__
