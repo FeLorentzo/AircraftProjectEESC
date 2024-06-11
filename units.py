@@ -9,6 +9,13 @@ def lbf2n(lbf):
 def lbm2kg(lbm):
     return 0.4536 * lbm
 
+def kg2lbm(Kg):
+    return Kg / 0.4536
+
+
+def lbm2lbf(lbm):
+    return lbm * 32.174
+
 
 def mi2m(mi):
     return  1609 * mi 
