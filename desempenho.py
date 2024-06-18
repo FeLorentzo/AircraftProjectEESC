@@ -2,8 +2,6 @@ import numpy as np
 from ambiance import Atmosphere
 
 # TODO: 
-# - Implementar decolagem
-# - Implementar pouso
 # - Compatibilizar input com dados do dict Aircraft
 
 # Inputs
@@ -35,8 +33,9 @@ condicoes = {
     "H_alternativa": 2000, # ft
 }
 
+# Condições de decolagem
 decolagem = {
-   'gamma_climb': 1,
+    'gamma_climb': 1,
     'Cl_run': 0.1, 
     'Cl_max': 2, 
     'mi': 0.01, 
@@ -47,6 +46,7 @@ decolagem = {
     'h_obstacle': 100
 }
 
+# Condições de pouso
 pouso = {
     'gamma_climb': 1,
     'Cl_run': 0.1, 
@@ -60,6 +60,7 @@ pouso = {
     'reversores': float
 }
 
+# Condições de curvas
 curvas = {
     'rho': 1.225, 
     'g': 9.81,
@@ -74,7 +75,7 @@ regime_long_range = {
 }
 
 
-def decolagem(dados_aeronave: dict, decolagem: dict):
+def takeoff(dados_aeronave:dict, decolagem:dict):
     '''
     Implementação baseada na teoria apresentada por Raymer.
     Feita de modo a ser compatível com a FAR 23.
@@ -95,20 +96,25 @@ def decolagem(dados_aeronave: dict, decolagem: dict):
     '''
 
     # Decomposição dos dados
-    S = dados_aeronave['S']
-    T = dados_aeronave['thrust']
-    W = dados_aeronave['MTOW']
-    CD0 = dados_aeronave['CD0']
-    K = 1/(np.pi() * dados_aeronave['AR'] * dados_aeronave['e'])
+    ## Dados da Aeronave
+    S = dados_aeronave['wing']['S']
+    W = dados_aeronave['definitions']['MTOW']
+    CD0 = dados_aeronave['coeficients']['CD0']
+    rho = dados_aeronave['definitions']['rho_SL']
+    g = dados_aeronave['definitions']['g']
+    V_stall = dados_aeronave['speeds']['V_stall']
+    K = 1/(np.pi * dados_aeronave['wing']['AR'] * dados_aeronave['wing']['e'])
+    eta = dados_aeronave["engine"]['eta'] 
+
+    # Dados da operação
     gamma = decolagem['gamma_climb']
     CL = decolagem['Cl_run']
-    mi = decolagem['mi']
-    rho = decolagem['rho']
-    g = decolagem['g']
     V_f = decolagem['V_f']
-    V_stall = decolagem['V_stall']
+    mi = decolagem['mi']
     h_obstacle = decolagem['h_obstacle']
 
+    # Calculo do tThrust
+    T = eta * dados_aeronave["engine"]["power"]/ dados_aeronave['speeds']["V_cruise"]
     ### Aceleração (V: 0 - 1.1*V_stall)
     # Modelo: Aceleração constante 
     #   M.a(t) = T - D - mi.(W-L)
@@ -116,12 +122,12 @@ def decolagem(dados_aeronave: dict, decolagem: dict):
     #   a(t) = g.[KT- KA.V**2]; KT=(T/W - mi); KA = (rho/(W/S)).(CD0 + K.CL**2  - mi.CL)
 
     KT = T/W - mi
-    KA = (rho/(2*W/S)) * (CD0 + K.CL**2  - mi.CL)
+    KA = (rho/(2*W/S)) * (CD0 + K*CL**2  - mi*CL)
 
     #   s(t) = \int_{v_i}^{v_f}(V/a)dV = 0.5 * \int_{v_i}^{v_f}(1/a)d(V**2)
     #   s(t) = (1/2gKA).ln((KT + KA.(V_f)**2)/(KT + KA.(V_i)**2))
 
-    SG = (1/(2*g*KA)) * np.ln((KT - KA*(V_f)**2)/(KT))
+    SG = (1/(2*g*KA)) * np.log((KT - KA*(V_f)**2)/(KT))
 
     ### Transição (V: 1.1*V_stall - 1.2*V_stall)
     # Def: n = 1.2
@@ -140,19 +146,32 @@ def decolagem(dados_aeronave: dict, decolagem: dict):
     return [SG, ST, SC]
 
 
-def subida(dados_aeronave: dict, h0:float, hf:float, W_fuel_init:float|None = None, vmin:float=100.0, vmax:float= 300.0, dT:float = 0) -> tuple:
+def climb(dados_aeronave:dict, climb:dict) -> tuple:
 
     ## Dados da aeronave
-    AR=dados_aeronave["AR"]
-    e=dados_aeronave["e"]
-    Cd0 = dados_aeronave["CD0"]
-    BOW = dados_aeronave["BOW"] # N
-    W_fuel = dados_aeronave['W_fuel'] # N
-    Thrust0 = dados_aeronave["thrust"] # N
-    S = dados_aeronave["S"]
-    TSFC = dados_aeronave["TSFC"]
+    # Dados Asa
+    AR = dados_aeronave['wing']['AR']
+    e=dados_aeronave['wing']["e"]
+    S = dados_aeronave['wing']["S"]
+    # Dados aerodinamicos
+    Cd0 = dados_aeronave['coeficients']['CD0']
     K = 1/(np.pi*AR*e)
+    # Dados de peso
+    BOW = dados_aeronave['weights']["BOW"] # N
+    W_fuel = dados_aeronave['weights']['fuel'] # N
+    # Dados de motor
+    eta = dados_aeronave["engine"]['eta']  # N
+    TSFC = dados_aeronave["engine"]["SFC_cruise"]
 
+    ## Dados o climb
+    h0 = climb['h0']
+    hf = climb['hf']
+    W_fuel_init = climb['W_fuel_init']
+    vmin = climb['vmin']
+    vmax = climb['vmax']
+    dT = climb['dT']
+    dh = climb['dh'] # intervalos de altitudes
+    
     # Condições atmosféricas
     T0 = Atmosphere(0).temperature[0]
     P0 =  Atmosphere(0).pressure[0]
@@ -170,7 +189,7 @@ def subida(dados_aeronave: dict, h0:float, hf:float, W_fuel_init:float|None = No
 
     # Cria um range de velocidades a serem avaliadas
     V = np.arange(vmin, vmax, 10)
-
+    Thrust0 = 0.65 * eta * dados_aeronave["engine"]["power"]/V
 
     # variáveis auxiliares
     consumos = []
@@ -178,8 +197,7 @@ def subida(dados_aeronave: dict, h0:float, hf:float, W_fuel_init:float|None = No
     tempos = []
     RCs_max = []
 
-    discretização = 100  # intervalos de altitudes
-    alturas = np.arange(h0, hf+discretização, discretização)
+    alturas = np.arange(h0, hf+dh, dh)
 
     #print('alturas = ', alturas)
     for h_ind in alturas:
@@ -188,7 +206,8 @@ def subida(dados_aeronave: dict, h0:float, hf:float, W_fuel_init:float|None = No
         h_real = h_ind * (T + dT)/T
 
         # Calculo
-        sigma = (Atmosphere(h_real * 0.3048).density)[0]/rho0
+        rho = Atmosphere(h_real * 0.3048).density[0]
+        sigma = rho/rho0
         M     = (V)/Atmosphere(h_real * 0.3048).speed_of_sound[0]               # V (true aero speed)  (V*sigma**0.5)= Ve (Velocidade equivalente)
         phi   = 1/(0.7 * M**2)  *  (((1 + 0.2 * M**2)**3.5 - 1)/((1 + 0.2 * M**2)**2.5))
         f_a   =  0.7 * (M**2) * (phi-(0.190263 * (T+dT)/T))
@@ -199,12 +218,7 @@ def subida(dados_aeronave: dict, h0:float, hf:float, W_fuel_init:float|None = No
             Thrust = 1.439 * Thrust0 * sigma                                    # empuxo para altitudes maiores q troposfera
             f_a    = phi * 0.7 * M**2                                           # fator de aceleração para altitudes maiores q troposfera
 
-        ## Calcula Consumo
-        consumo = TSFC * Thrust * t
-        consumos.append(consumo)
-        W = W - consumo
-
-        Cl = (2 * (W/S))/( Atmosphere(h_real*0.3048).density * V**2)
+        Cl = (2 * (W/S))/(rho * V**2)
         Cd = Cd0 + K * (Cl**2)
         E = Cl/Cd
 
@@ -214,12 +228,16 @@ def subida(dados_aeronave: dict, h0:float, hf:float, W_fuel_init:float|None = No
         RC = RC_1/(1 + f_a)
         RCs_max.append(max(RC))
         index = np.where(RC == max(RC))                                         # pega o index do vetor RC em que RC é máximo
-        v_rcmax = V[index][0]                                                   # pega a velocidade em que RC é máximo
-        gamma_rcmax = gamma[index][0]                                           # pega o gama em que RC é máximo
+        v_rcmax = V[index]                                                   # pega a velocidade em que RC é máximo
+        gamma_rcmax = gamma[index]                                           # pega o gama em que RC é máximo
         v_horizontal = v_rcmax * np.cos(gamma_rcmax)                            # calcula a velocidade horizontal em que RC é máximo para determinada faixa de altitude
 
+        ## Calcula Consumo
+        consumo = TSFC * Thrust[index] * t
+        consumos.append(consumo)
+        W = W - consumo
 
-        t = discretização * ((T + dT)/T) * 0.3048 / max(RC)                     # Tempo para o maximo RC de cada altitude = faixa de altitude/RC
+        t = dh * ((T + dT)/T) * 0.3048 / max(RC)                     # Tempo para o maximo RC de cada altitude = faixa de altitude/RC
         tempos.append(t)
         d = v_horizontal * t                                                    # Distância percorrida
         distancias.append(d)
@@ -257,24 +275,35 @@ def subida(dados_aeronave: dict, h0:float, hf:float, W_fuel_init:float|None = No
     dist_percorrida = sum(np.array(distancias)[mask2])
     consumo_total   = sum(np.array(consumos)[mask2])
 
-    return tempo_total, consumo_total, dist_percorrida, FL
+    return tempo_total, consumo_total[0], dist_percorrida[0], FL
 
 
-def cruseiro(dados_aeronave: dict,  h0:float, hf:float, W_fuel_init:float, mach:float = 0.79, W_reserve_fuel:float=10_000, step_climb:bool=True):
+def cruise(dados_aeronave: dict,  cruise:dict):
     # Deve retornar o tempo decorrido, combustivel consumido, distância percorida e variação da altura
     
     ## Dados da aeronave
-    AR= dados_aeronave["AR"]
-    BOW= dados_aeronave["BOW"]
-    e = dados_aeronave["e"]
-    CD0 = dados_aeronave["CD0"]
-    MTOW = dados_aeronave["MTOW"] # N
-    S = dados_aeronave["S"]
-    TSFC = dados_aeronave["TSFC"]              
+    # Dados Asa
+    AR = dados_aeronave['wing']['AR']
+    e=dados_aeronave['wing']["e"]
+    S = dados_aeronave['wing']["S"]
+    # Dados aerodinamicos
+    CD0 = dados_aeronave['coeficients']['CD0']
     K = 1/(np.pi*AR*e)
+    # Dados de peso
+    BOW = dados_aeronave['weights']["BOW"] # N
+    W_fuel = dados_aeronave['weights']['fuel'] # N
+    # Dados de motor
+    eta = dados_aeronave["engine"]['eta']  # N
+    TSFC = dados_aeronave["engine"]["SFC_cruise"]
 
-    ## Discretização 
-    dt=100    
+    ## Dados Cruise
+    h0 = cruise['h0']
+    hf = cruise['hf']
+    W_fuel_init = cruise['W_fuel_init']
+    mach = cruise['mach']
+    W_reserve_fuel = cruise['W_reserve_fuel']
+    step_climb = cruise['step_climb']
+    dt = cruise['dt']
 
     ## Pesos
     W = BOW + W_fuel_init        # Peso total no inicio do cruzeiro
@@ -290,8 +319,8 @@ def cruseiro(dados_aeronave: dict,  h0:float, hf:float, W_fuel_init:float, mach:
       t+=dt
 
       ## Condições de voo
-      a = Atmosphere(h).speed_of_sound  
-      rho = Atmosphere(h).density    
+      a = Atmosphere(h).speed_of_sound[0]  
+      rho = Atmosphere(h).density[0] 
       V = mach*a
 
       ## Coeficientes 
@@ -310,7 +339,7 @@ def cruseiro(dados_aeronave: dict,  h0:float, hf:float, W_fuel_init:float, mach:
       
       if step_climb:
         ## Avalia possibilidade de um step-climb
-        tempo_subida, consumo_subida, dist_percorrida_subida, FL_atual = subida(dados_aeronave, h/0.3048, hf, W_fuel_init= (W - BOW))
+        tempo_subida, consumo_subida, dist_percorrida_subida, FL_atual = climb(dados_aeronave, h/0.3048, hf, W_fuel_init= (W - BOW))
         
       h = FL_atual * 0.3048
       W -= consumo_subida
@@ -321,14 +350,14 @@ def cruseiro(dados_aeronave: dict,  h0:float, hf:float, W_fuel_init:float, mach:
       distancia_total = distancia_total + dist + dist_percorrida_subida # soma de distancias percorridas para cada velocidade ideal
 
 
-def curvas(dados_aeronave: dict, curva: dict):
+def turn(dados_aeronave: dict, curva: dict):
 
     # Decomposição dos dados
-    S = dados_aeronave['S']
-    T = dados_aeronave['thrust']
+    S = dados_aeronave['wing']['S']
+    T = dados_aeronave['engine']["thrust cruise"]
     W = dados_aeronave['MTOW']
-    CD0 = dados_aeronave['CD0']
-    K = 1/(np.pi() * dados_aeronave['AR'] * dados_aeronave['e'])
+    CD0 = dados_aeronave['coeficients']['CD0']
+    K = 1/(np.pi * dados_aeronave['AR'] * dados_aeronave['e'])
     CL_max = dados_aeronave['Cl_max']
     n_max = dados_aeronave['n_max']
 
@@ -372,7 +401,8 @@ def curvas(dados_aeronave: dict, curva: dict):
 
     return NotImplementedError
 
-def descida(dados_aeronave: dict, h0:float, hf:float, W_fuel_init:float, vmin:float=100.0, vmax:float= 300.0, dT:float = 15, dt:float = 1, Thrust_percent:float = 50):
+
+def decend(dados_aeronave: dict, h0:float, hf:float, W_fuel_init:float, vmin:float=100.0, vmax:float= 300.0, dT:float = 15, dt:float = 1, Thrust_percent:float = 50):
     ## Dados da aeronave
     AR=dados_aeronave["AR"]
     e=dados_aeronave["e"]
@@ -495,13 +525,13 @@ def loitter(dados_aeronave):
     print('gasto total de combustível [N] =', Win-W)
 
 
-def pouso(dados_aeronave: dict, pouso: dict):
+def land(dados_aeronave: dict, pouso: dict):
     # Decomposição dos dados
-    S = dados_aeronave['S']
-    T = dados_aeronave['thrust']
+    S = dados_aeronave['wing']['S']
+    T = dados_aeronave['engine']["thrust cruise"]
     W = dados_aeronave['MTOW']
-    CD0 = dados_aeronave['CD0']
-    K = 1/(np.pi() * dados_aeronave['AR'] * dados_aeronave['e'])
+    CD0 = dados_aeronave['coeficients']['CD0']
+    K = 1/(np.pi * dados_aeronave['AR'] * dados_aeronave['e'])
 
     gamma = pouso['gamma_climb']
     CL = pouso['Cl_run']
