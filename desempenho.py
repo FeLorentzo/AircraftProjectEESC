@@ -222,9 +222,14 @@ def climb(dados_aeronave:dict, climb:dict) -> tuple:
         Cd = Cd0 + K * (Cl**2)
         E = Cl/Cd
 
-        # Calculo da razão de subida máxima?
-        gamma = np.arcsin(Thrust/W - 1/E)
-        RC_1 = V * np.sin(gamma)
+        # Calculo da razão de subida máxima
+        # gamma = np.arcsin(Thrust/W - 1/E) # Aprox de pequenos angulos 
+        A = (1 - (Thrust/W)**2)
+        B = 2/E
+        C = ((1/E**2) - (Thrust/W)**2)
+        gamma = np.arctan((-B + np.sqrt(B**2 -4*A*C))/(2*A))
+        print(gamma)
+        RC_1 = V * np.sin(gamma) 
         RC = RC_1/(1 + f_a)
         RCs_max.append(max(RC))
         index = np.where(RC == max(RC))                                         # pega o index do vetor RC em que RC é máximo
