@@ -1,3 +1,4 @@
+#%%
 import numpy as np
 from ambiance import Atmosphere
 import json
@@ -5,9 +6,8 @@ import matplotlib.pyplot as plt
 import aircraftconceptualdesign as acd
 import units
 import desempenho
-
+#%%
 # Initial requirements based on cargo mission stablished. The project velocity is based on cruise mission
-
 aircraft = {
    'definitions': { 
         'MTOW': units.lbm2kg(19000), # Kg, assuming MTOW given by FAR23
@@ -44,7 +44,7 @@ isa_sealevel = Atmosphere(0)
 
 # Compute range based on MTOW from database
 range = 0.0854*aircraft['weights']['MTOW'] + 461
-print(f'Range previewed by database: {range} nm') # ~ 1100 nm
+print(f'Range previewed by database: {units.mi2m(range)/1000} km') # ~ 1100 nm
 
 
 # Mission profile
@@ -70,7 +70,7 @@ def compute_oswald(AR, Lambda = 0):
         return np.interp(Lambda, [Lambda_min, Lambda_max], [val_min, val_max])
 
 ########################################################################################################################################
-
+#%%
 ## Calculations on initial performance ##
 
 # Empty weight
@@ -78,7 +78,6 @@ aircraft['weights']["W_empty"] = aircraft['weights']["W_empty/W"] * aircraft['we
 print(f'Empty weight: {aircraft["weights"]["W_empty"]}')
 
 # wing load estimation, through data linearization of database. is given by Kg of MTOW/ wing area; must be converted in N
-
 aircraft['weights']["wing_load"] = (0.00846 * aircraft['weights']["MTOW"] + 121)*aircraft['definitions']['g']
 print(f'Wing load: {aircraft["weights"]["wing_load"]:.2f}')
 
@@ -104,9 +103,9 @@ aircraft['coeficients']["Cd cruise"] =  aircraft["engine"]["thrust cruise"]/(0.5
 print(f'Cd de cruzeiro a nível do mar: {aircraft["coeficients"]["Cd cruise"]:.6f}')
 print(f'L/D de cruzeiro a nível do mar: {aircraft["coeficients"]["Cl cruise"]/aircraft["coeficients"]["Cd cruise"]:.2f}')
 
-# Compute SFC cruise and loiter through Raymer method
-aircraft["engine"]['SFC_loiter'] = 0.6 * aircraft['speeds']['V_cruise'] / (units.hp2Watt(550) * 0.8)
-aircraft["engine"]["SFC_cruise"] = 0.5 * aircraft['speeds']['V_cruise'] / (units.hp2Watt(550) * 0.8)
+# Compute SFC cruise and loiter through Raymer method pg. 23
+aircraft["engine"]['SFC_loiter'] = 0.6 * units.ms2knot(aircraft['speeds']['V_cruise']) / (units.hp2Watt(550) * 0.7)
+aircraft["engine"]["SFC_cruise"] = 0.5 * units.ms2knot(aircraft['speeds']['V_cruise']) / (units.hp2Watt(550) * 0.8)
 print(f'Consumo cruise : {aircraft["engine"]["SFC_cruise"]:e}')
 print(f'Consumo loiter : {aircraft["engine"]["SFC_loiter"]:e}')
 
@@ -115,7 +114,7 @@ aircraft['speeds']['V_stall'] = np.sqrt(2*aircraft['weights']["MTOW"]*aircraft['
 print(f"Vel. Stall : {aircraft['speeds']['V_stall']}")
 
 ########################################################################################################################################
-
+#%%
 ## First weight estimative ##
 def first_weight_estimate(aircraft: dict) -> float :
     frac_weight = 1
@@ -146,12 +145,12 @@ print(f'vol = {wf_frac*aircraft["weights"]["MTOW"]/0.72}')
 
 w_pay = aircraft["weights"]['MTOW'] * (1 - wf_frac - aircraft["weights"]['W_empty/W']) - aircraft["weights"]['W_crew']
 aircraft['weights']['payload'] = w_pay
-aircraft['weights']['fuel'] = aircraft["weights"]['MTOW'] * wf_frac
-aircraft['weights']['BOW'] = aircraft["weights"]['MTOW'] - aircraft['weights']['fuel']
+aircraft['weights']['fuel'] = aircraft["weights"]['MTOW'] * wf_frac # Em kg
+aircraft['weights']['BOW'] = aircraft["weights"]['MTOW'] - aircraft['weights']['fuel'] # Em kg
 print(f'Payload: {w_pay}')
 
 ########################################################################################################################################
-
+#%%
 ## Estimating areas of tail, flap and aileron ##
 
 print(f"S_ref: {aircraft['wing']['S']:.3f}")
@@ -230,7 +229,7 @@ aircraft['vt'].update(vt_param)
 aircraft['fus'].update(fus_param)
 
 ########################################################################################################################################
-
+#%%
 ## Drag estimative ##
 
 # Friction drag
@@ -317,7 +316,7 @@ print(f'Arrasto parasita total com componente de miscelânia = {Cd_p:.4f}\n')
 aircraft['coeficients']['CD0'] = Cd_p
 
 #####################################################################################################################################
-
+#%%
 ## Drag x velocity curves ##
 
 # Parasite drag
@@ -360,12 +359,13 @@ plt.grid()
 plt.legend()
 
 #####################################################################################################################################
-
+#%%
 # Constraint analysis
 
 #####################################################################################################################################
-
+#%%
 # Performance
+print("\n\n# Performance")
 
 ## Decolagem:
 takeoff_data = {
@@ -373,39 +373,161 @@ takeoff_data = {
     'Cl_run': 0.1, 
     'V_f': 100,
     'mi': 0.01, 
-    'h_obstacle': 100
+    'h_obstacle': 50 # FAR 23.53(b)
 }
 
-[dist_ground, dist_transistion, dist_climb] = desempenho.takeoff(dados_aeronave = aircraft,
-                                                            decolagem = takeoff_data)
+
+dist_ground, dist_transistion, dist_climb = desempenho.takeoff(dados_aeronave = aircraft,
+                                                                takeoff_data = takeoff_data)
+print('dist_ground, dist_transistion, dist_climb' )
+print(dist_ground, dist_transistion, dist_climb )
+consumo_takeoff =  aircraft['weights']['MTOW']*(1-0.97)
+print('consumo_takeoff',consumo_takeoff)
 
 ## Subida
 climb_data = {
     'h0':takeoff_data['h_obstacle'],
-    'hf': 20_000,
-    'W_fuel_init': aircraft['weights']['fuel'] ,
-    'vmin': 100.0,
-    'vmax': 300.0,
+    'hf': 40_000,
+    'W_fuel_init': aircraft['weights']['fuel'] - consumo_takeoff,
+    'vmin': aircraft['speeds']['V_stall'],
+    'vmax': aircraft['speeds']['V_cruise'] * 1.4,
     'dT': 0, # Variação da temperatura ISA
     'dh': 100, #ft
 }
-
+print(climb_data)
 tempo_climb, consumo_climb, dist_climb, FL_final = desempenho.climb(dados_aeronave = aircraft,
-                                                                    climb = climb_data)
-print(tempo_climb, consumo_climb, dist_climb, FL_final)
+                                                                    climb_dict = climb_data)
+print('tempo_climb, consumo_climb, dist_climb, FL_final')
+print(f"{tempo_climb/60:.2f}min", f"{consumo_climb:.2f}kg", f"{dist_climb/1000:.2f}km", FL_final)
+print(f"Consumo de combustivel: {(100*consumo_climb+consumo_takeoff)/aircraft['weights']['fuel']:.2f}%\n")
 
 ## Cruise
 cruise_data = {
     'h0':FL_final, 
     'hf':40_000,
-    'W_fuel_init':aircraft['weights']['fuel'] - consumo_climb, 
-    'mach': 0.79, 
-    'W_reserve_fuel':10_000, 
-    'step_climb':True,
-    'dt': 60, #s
-}
+    'W_fuel_init': climb_data['W_fuel_init']- consumo_climb, 
+    'mach': aircraft['speeds']['V_cruise']/Atmosphere(units.ft2m(25000)).speed_of_sound[0], 
+    'W_reserve_fuel': aircraft['weights']['fuel'] * 0.30, 
+    'step_climb':False,
+    'dt': 10, #s?
+} 
+print(cruise_data)
+tempo_cruise, consumo_cruise, dist_cruise, FL_final = desempenho.cruise(dados_aeronave = aircraft,
+                                                                        cruise_dict = cruise_data)
+print('tempo_cruise, consumo_cruise, dist_cruise, FL_final')
+print(f"{tempo_cruise/3600:.2f}h", f"{consumo_cruise:.2f}kg", f"{dist_cruise/1000:.2f}km", FL_final)
+print(f"Consumo de combustivel: {100*(consumo_cruise+consumo_climb+consumo_takeoff)/aircraft['weights']['fuel']:.2f}%\n")
 
-# tempo_cruise, consumo_cruise, dist_cruise, FL_final = desempenho.cruise(dados_aeronave = aircraft,
-#                                                                         cruise = cruise_data)
-# # print('tempo_cruise, consumo_cruise, dist_cruise+dist_climb, FL_final')
-# # print(tempo_cruise, consumo_cruise, dist_cruise+dist_climb, FL_final)
+## Descend
+descend_data = {
+    'h0':FL_final, 
+    'hf':10_000,
+    'W_fuel_init': cruise_data['W_fuel_init'] - consumo_cruise, 
+    'vmin': aircraft['speeds']['V_stall'],
+    'vmax': aircraft['speeds']['V_cruise'] * 1.4,
+    'dt': 1, #s
+    'dT': 0,
+    'Thrust_percent': 10
+}
+print(descend_data)
+tempo_descida, consumo_descida, distancia_descida, FL_final = desempenho.decend(dados_aeronave = aircraft,
+                                                                               descend_dict=descend_data)
+print('tempo_descida, consumo_descida, distancia_descida, FL_final')
+print(f"{tempo_descida/60:.2f}min", f"{consumo_descida:.2f}kg", f"{distancia_descida/1000:.2f}km", FL_final)
+print(f"Consumo de combustivel: {100*(consumo_cruise+consumo_descida+consumo_climb+consumo_takeoff)/aircraft['weights']['fuel']:.2f}%\n")
+
+## Loitter
+
+loitter_data = {
+    'h_loitter': FL_final,
+    'loitter_time': 20*60, # s
+    'W_fuel_init':  descend_data['W_fuel_init'] - consumo_descida,
+    'dt': 5, #s
+    'dT': 0, #K
+}
+consumo_loitter = desempenho.loitter(dados_aeronave = aircraft,
+                                     loitter_dict = loitter_data)[0]
+print('consumo_loitter')
+print(f"{consumo_loitter:.2f}kg")
+print(f"Consumo de combustivel: {100*(consumo_cruise+consumo_loitter+consumo_descida+consumo_climb+consumo_takeoff)/aircraft['weights']['fuel']:.2f}%\n")
+
+
+## Cruise
+cruise2_data = {
+    'h0':FL_final, 
+    'hf':10_000,
+    'W_fuel_init': loitter_data['W_fuel_init']- consumo_loitter, 
+    'mach': aircraft['speeds']['V_cruise']/Atmosphere(0).speed_of_sound[0], 
+    'W_reserve_fuel': aircraft['weights']['fuel'] * 0.125, 
+    'step_climb':False,
+    'dt': 5, #s?
+}
+print(cruise2_data)
+tempo_cruise2, consumo_cruise2, dist_cruise2, FL_final = desempenho.cruise(dados_aeronave = aircraft,
+                                                                        cruise_dict = cruise2_data)
+print('tempo_cruise2, consumo_cruise2, dist_cruise2, FL_final')
+print(f"{tempo_cruise2/3600:.2f}h", f"{consumo_cruise2:.2f}kg", f"{dist_cruise2/1000:.2f}km", FL_final)
+print(f"Consumo de combustivel: {100*(consumo_loitter+consumo_cruise+consumo_cruise2+consumo_descida+consumo_climb+consumo_takeoff)/aircraft['weights']['fuel']:.2f}%\n")
+
+loitter_data2 = {
+    'h_loitter': FL_final,
+    'loitter_time': 20*60, # s
+    'W_fuel_init':  descend_data['W_fuel_init'] - consumo_descida,
+    'dt': 5, #s
+    'dT': 0, #K
+}
+consumo_loitter2 = desempenho.loitter(dados_aeronave = aircraft,
+                                     loitter_dict = loitter_data2)[0]
+print('consumo_loitter')
+print(f"{consumo_loitter2:.2f}kg")
+print(f"Consumo de combustivel: {100*(consumo_cruise+consumo_cruise2+consumo_loitter+consumo_loitter2+consumo_descida+consumo_climb+consumo_takeoff)/aircraft['weights']['fuel']:.2f}%\n")
+
+## Descend
+descend_data = {
+    'h0':FL_final, 
+    'hf':100,
+    'W_fuel_init': cruise2_data['W_fuel_init'] - consumo_cruise2 - consumo_loitter2, 
+    'vmin': aircraft['speeds']['V_stall'],
+    'vmax': aircraft['speeds']['V_cruise'] * 1.4,
+    'dt': 1, #s
+    'dT': 0,
+    'Thrust_percent': 10
+}
+print(descend_data)
+tempo_descida2, consumo_descida2, distancia_descida2, FL_final = desempenho.decend(dados_aeronave = aircraft,
+                                                                               descend_dict=descend_data)
+print('tempo_descida, consumo_descida, distancia_descida, FL_final')
+print(f"{tempo_descida2/60:.2f}min", f"{consumo_descida2:.2f}kg", f"{distancia_descida2/1000:.2f}km", FL_final)
+print(f"Consumo de combustivel: {100*(consumo_cruise+consumo_cruise2+consumo_loitter+consumo_loitter2+consumo_descida+consumo_descida2+consumo_climb+consumo_takeoff)/aircraft['weights']['fuel']:.2f}%\n")
+
+land_data={
+    'gamma_descent': 3, # deg
+    'Cl_run': -0.2,
+    'mi': 0.01,
+    'mi_break': 0.1,
+    'rho': 1,
+    'h_obstacle': 50,
+    'reversores': 0.5,
+}
+## Land 
+SA, SF, SFR, SB = desempenho.land(dados_aeronave=aircraft,
+                                  land_dict=land_data)
+print('SA, SF, SFR, SB')
+print(SA, SF, SFR, SB)
+# %%
+
+## Endurance flight
+
+Endurance_data = {
+    'h_loitter': FL_final,
+    'loitter_time': 5*3600 - 10*60, # s
+    'W_fuel_init':  climb_data['W_fuel_init'] - consumo_takeoff,
+    'dt': 5, #s
+    'dT': 0, #K
+}
+consumo_endurance = desempenho.loitter(dados_aeronave = aircraft,
+                                     loitter_dict = Endurance_data)[0]
+print('consumo_endurance')
+print(f"{consumo_endurance:.2f}kg")
+print(f"Consumo de combustivel: {100*(consumo_endurance+consumo_climb+consumo_takeoff)/aircraft['weights']['fuel']:.2f}%\n")
+# %%
