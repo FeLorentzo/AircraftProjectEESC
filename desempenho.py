@@ -1,81 +1,7 @@
 import numpy as np
 from ambiance import Atmosphere
 
-# TODO: 
-# - Compatibilizar input com dados do dict Aircraft
-
-# Inputs
-dados_aeronave = {
-    "AR": 8.90,
-    "e": 0.85,
-    "CD0": 0.025,
-    "MTOW": 450_300, # N
-    "W_fuel": 130_000, # N
-    "thrust": 92300, # N
-    "S": 92.5, # m**2
-    "TSFC": 0.85/3600, # N/s/N
-    "BOW": 320_300, # N peso da aeronave sem combustivel
-    'Cl_max' : 2,
-    'n_max': 6
-}
-
-# Condições de voo
-condicoes = {
-    "H_partida": 0,
-    "ISA_destino": 15 , # ISA + 15
-    "H_max": 41_000, #ft
-    "H_final": 0,
-    "d_alternativa": 200, #nm
-    "H_cruise": 20_000, # ft
-    "ISA_alternativa" : 20, # ISA+20
-    "H_loiter": 10_000, #ft
-    "dT_loiter": 30, # min
-    "H_alternativa": 2000, # ft
-}
-
-# Condições de decolagem
-decolagem = {
-    'gamma_climb': 1,
-    'Cl_run': 0.1, 
-    'Cl_max': 2, 
-    'mi': 0.01, 
-    'rho': 1.225, 
-    'g': 9.81, 
-    'V_f': 100, 
-    'V_stall': 80, 
-    'h_obstacle': 100
-}
-
-# Condições de pouso
-pouso = {
-    'gamma_climb': 1,
-    'Cl_run': 0.1, 
-    'Cl_max': 2, 
-    'mi': 0.01, 
-    'mi_break': 0.5, 
-    'rho': 1.225, 
-    'g': 9.81, 
-    'V_stall': float, 
-    'h_obstacle': float,
-    'reversores': float
-}
-
-# Condições de curvas
-curvas = {
-    'rho': 1.225, 
-    'g': 9.81,
-    'V_max': 500,
-}
-
-# Outros
-regime_long_range = {
-    "M": 0.79,
-    "RS_min": 500, # ft/min
-    "dH_step_climb": 2000
-}
-
-
-def takeoff(dados_aeronave:dict, decolagem:dict):
+def takeoff(dados_aeronave:dict, takeoff_data:dict):
     '''
     Implementação baseada na teoria apresentada por Raymer.
     Feita de modo a ser compatível com a FAR 23.
@@ -107,11 +33,11 @@ def takeoff(dados_aeronave:dict, decolagem:dict):
     eta = dados_aeronave["engine"]['eta'] 
 
     # Dados da operação
-    gamma = decolagem['gamma_climb']
-    CL = decolagem['Cl_run']
-    V_f = decolagem['V_f']
-    mi = decolagem['mi']
-    h_obstacle = decolagem['h_obstacle']
+    gamma = takeoff_data['gamma_climb']
+    CL = takeoff_data['Cl_run']
+    V_f = takeoff_data['V_f']
+    mi = takeoff_data['mi']
+    h_obstacle = takeoff_data['h_obstacle']
 
     # Calculo do tThrust
     T = eta * dados_aeronave["engine"]["power"]/ dados_aeronave['speeds']["V_cruise"]
@@ -146,7 +72,7 @@ def takeoff(dados_aeronave:dict, decolagem:dict):
     return [SG, ST, SC]
 
 
-def climb(dados_aeronave:dict, climb:dict) -> tuple:
+def climb(dados_aeronave:dict, climb_dict:dict) -> tuple:
 
     ## Dados da aeronave
     # Dados Asa
@@ -157,20 +83,20 @@ def climb(dados_aeronave:dict, climb:dict) -> tuple:
     Cd0 = dados_aeronave['coeficients']['CD0']
     K = 1/(np.pi*AR*e)
     # Dados de peso
-    BOW = dados_aeronave['weights']["BOW"] # N
-    W_fuel = dados_aeronave['weights']['fuel'] # N
+    BOW = dados_aeronave['weights']["BOW"] * 9.81 # N
+    W_fuel = dados_aeronave['weights']['fuel'] * 9.81 # N
     # Dados de motor
-    eta = dados_aeronave["engine"]['eta']  # N
-    TSFC = dados_aeronave["engine"]["SFC_cruise"]
+    eta = dados_aeronave["engine"]['eta'] 
+    TSFC = dados_aeronave["engine"]["SFC_cruise"] # N
 
     ## Dados o climb
-    h0 = climb['h0']
-    hf = climb['hf']
-    W_fuel_init = climb['W_fuel_init']
-    vmin = climb['vmin']
-    vmax = climb['vmax']
-    dT = climb['dT']
-    dh = climb['dh'] # intervalos de altitudes
+    h0 = climb_dict['h0']
+    hf = climb_dict['hf']
+    W_fuel_init = climb_dict['W_fuel_init'] * 9.81 # N
+    vmin = climb_dict['vmin']
+    vmax = climb_dict['vmax']
+    dT = climb_dict['dT']
+    dh = climb_dict['dh'] # intervalos de altitudes
     
     # Condições atmosféricas
     T0 = Atmosphere(0).temperature[0]
@@ -189,7 +115,7 @@ def climb(dados_aeronave:dict, climb:dict) -> tuple:
 
     # Cria um range de velocidades a serem avaliadas
     V = np.arange(vmin, vmax, 10)
-    Thrust0 = 0.65 * eta * dados_aeronave["engine"]["power"]/V
+    Thrust0 = eta * dados_aeronave["engine"]["power"]/V
 
     # variáveis auxiliares
     consumos = []
@@ -227,22 +153,22 @@ def climb(dados_aeronave:dict, climb:dict) -> tuple:
         A = (1 - (Thrust/W)**2)
         B = 2/E
         C = ((1/E**2) - (Thrust/W)**2)
-        gamma = np.arctan((-B + np.sqrt(B**2 -4*A*C))/(2*A))
-        print(gamma)
+        delta = B**2 - 4*A*C
+        gamma = np.arctan((-B + np.sqrt(delta))/(2*A))
         RC_1 = V * np.sin(gamma) 
         RC = RC_1/(1 + f_a)
-        RCs_max.append(max(RC))
-        index = np.where(RC == max(RC))                                         # pega o index do vetor RC em que RC é máximo
-        v_rcmax = V[index]                                                   # pega a velocidade em que RC é máximo
-        gamma_rcmax = gamma[index]                                           # pega o gama em que RC é máximo
+        RCs_max.append(np.max(RC))
+        index = np.where(RC == np.max(RC))                                       # pega o index do vetor RC em que RC é máximo
+        v_rcmax = V[index][0]                                                   # pega a velocidade em que RC é máximo
+        gamma_rcmax = gamma[index][0]                                           # pega o gama em que RC é máximo
         v_horizontal = v_rcmax * np.cos(gamma_rcmax)                            # calcula a velocidade horizontal em que RC é máximo para determinada faixa de altitude
 
+
         ## Calcula Consumo
-        consumo = TSFC * Thrust[index] * t
+        t = dh * ((T + dT)/T) * 0.3048 / max(RC)                     # Tempo para o maximo RC de cada altitude = faixa de altitude/RC
+        consumo = TSFC * Thrust[index][0] * t
         consumos.append(consumo)
         W = W - consumo
-
-        t = dh * ((T + dT)/T) * 0.3048 / max(RC)                     # Tempo para o maximo RC de cada altitude = faixa de altitude/RC
         tempos.append(t)
         d = v_horizontal * t                                                    # Distância percorrida
         distancias.append(d)
@@ -280,10 +206,10 @@ def climb(dados_aeronave:dict, climb:dict) -> tuple:
     dist_percorrida = sum(np.array(distancias)[mask2])
     consumo_total   = sum(np.array(consumos)[mask2])
 
-    return tempo_total, consumo_total[0], dist_percorrida[0], FL
+    return tempo_total, consumo_total/9.81, dist_percorrida, FL
 
 
-def cruise(dados_aeronave: dict,  cruise:dict):
+def cruise(dados_aeronave: dict,  cruise_dict:dict):
     # Deve retornar o tempo decorrido, combustivel consumido, distância percorida e variação da altura
     
     ## Dados da aeronave
@@ -295,20 +221,20 @@ def cruise(dados_aeronave: dict,  cruise:dict):
     CD0 = dados_aeronave['coeficients']['CD0']
     K = 1/(np.pi*AR*e)
     # Dados de peso
-    BOW = dados_aeronave['weights']["BOW"] # N
-    W_fuel = dados_aeronave['weights']['fuel'] # N
+    BOW = dados_aeronave['weights']["BOW"] * 9.81 # N
+    W_fuel = dados_aeronave['weights']['fuel'] * 9.81 # N
     # Dados de motor
     eta = dados_aeronave["engine"]['eta']  # N
     TSFC = dados_aeronave["engine"]["SFC_cruise"]
 
     ## Dados Cruise
-    h0 = cruise['h0']
-    hf = cruise['hf']
-    W_fuel_init = cruise['W_fuel_init']
-    mach = cruise['mach']
-    W_reserve_fuel = cruise['W_reserve_fuel']
-    step_climb = cruise['step_climb']
-    dt = cruise['dt']
+    h0 = cruise_dict['h0']
+    hf = cruise_dict['hf']
+    W_fuel_init = cruise_dict['W_fuel_init'] * 9.81
+    mach = cruise_dict['mach']
+    W_reserve_fuel = cruise_dict['W_reserve_fuel'] * 9.81
+    step_climb = cruise_dict['step_climb']
+    dt = cruise_dict['dt']
 
     ## Pesos
     W = BOW + W_fuel_init        # Peso total no inicio do cruzeiro
@@ -316,46 +242,55 @@ def cruise(dados_aeronave: dict,  cruise:dict):
     
     # Acumuladores
     distancia_total=0
-    dist=0
     t = 0
     h = h0 * 0.3048
 
     while True:
-      t+=dt
+        t+=dt
 
-      ## Condições de voo
-      a = Atmosphere(h).speed_of_sound[0]  
-      rho = Atmosphere(h).density[0] 
-      V = mach*a
+        ## Condições de voo
+        a = Atmosphere(h).speed_of_sound[0]  
+        rho = Atmosphere(h).density[0] 
+        V = mach*a
 
-      ## Coeficientes 
-      Cl = (2 * (W/S))/( rho * V**2) #calculo do cl
-      Cd = CD0 + K * (Cl**2)
-      E = Cl/Cd
-      T = W/E
+        ## Coeficientes 
+        Cl = (2 * (W/S))/( rho * V**2) #calculo do cl
+        Cd = CD0 + K * (Cl**2)
+        E = Cl/Cd
+        T = W/E
 
-      ## Atualiza peso da aeronave
-      W -= TSFC*dt*T
+        ## Atualiza peso da aeronave
+        W -= TSFC*dt*T
 
-      ## Avalia condição de fim de cruseiro
-      if  W < W_min_cruseiro:
-        consumo_cruseiro = BOW + W_fuel_init - W
-        return  t, consumo_cruseiro, distancia_total, h/0.3048
-      
-      if step_climb:
-        ## Avalia possibilidade de um step-climb
-        tempo_subida, consumo_subida, dist_percorrida_subida, FL_atual = climb(dados_aeronave, h/0.3048, hf, W_fuel_init= (W - BOW))
+        ## Atualiza distância percorrida
+        distancia_total+= V*dt
+
+        ## Avalia condição de fim de cruseiro
+        if  W < W_min_cruseiro:
+            consumo_cruseiro = (BOW + W_fuel_init - W)/9.81
+            return  t, consumo_cruseiro, distancia_total, h/0.3048
         
-      h = FL_atual * 0.3048
-      W -= consumo_subida
-      t += tempo_subida
+        if step_climb:
+            ## Avalia possibilidade de um step-climb
+            climb_data = {
+                    'h0':h/0.3048,
+                    'hf': hf,
+                    'W_fuel_init': (W - BOW)/9.81,
+                    'vmin': V * 0.9,
+                    'vmax': V * 1.1,
+                    'dT': 0, # Variação da temperatura ISA
+                    'dh': 100, #ft
+                }
+            
+            tempo_subida, consumo_subida, dist_percorrida_subida, FL_atual = climb(dados_aeronave, climb_data)
+            
+            h = FL_atual * 0.3048
+            W -= consumo_subida * 9.81
+            t += tempo_subida
+            distancia_total+= dist_percorrida_subida
 
-    # Calcula a distância percorrida
-      dist = V * dt # distancia percorrida para cada faixa de tempo
-      distancia_total = distancia_total + dist + dist_percorrida_subida # soma de distancias percorridas para cada velocidade ideal
 
-
-def turn(dados_aeronave: dict, curva: dict):
+def turn(dados_aeronave: dict, turn_dict: dict):
 
     # Decomposição dos dados
     S = dados_aeronave['wing']['S']
@@ -366,9 +301,9 @@ def turn(dados_aeronave: dict, curva: dict):
     CL_max = dados_aeronave['Cl_max']
     n_max = dados_aeronave['n_max']
 
-    rho = curva['rho']
-    g = curva['g']
-    V_max = curva['V_max']
+    rho = turn_dict['rho']
+    g = turn_dict['g']
+    V_max = turn_dict['V_max']
 
     V = np.linspace(0, V_max*1.5,200)
     q = 0.5 * rho * (V**2)
@@ -407,20 +342,34 @@ def turn(dados_aeronave: dict, curva: dict):
     return NotImplementedError
 
 
-def decend(dados_aeronave: dict, h0:float, hf:float, W_fuel_init:float, vmin:float=100.0, vmax:float= 300.0, dT:float = 15, dt:float = 1, Thrust_percent:float = 50):
+def decend(dados_aeronave: dict, descend_dict: dict):
     ## Dados da aeronave
-    AR=dados_aeronave["AR"]
-    e=dados_aeronave["e"]
-    Cd0 = dados_aeronave["CD0"]
-    BOW= dados_aeronave["BOW"]
-    Thrust0 = dados_aeronave["thrust"] # N
-    S = dados_aeronave["S"]
-    TSFC = dados_aeronave["TSFC"]
+    # Dados Asa
+    AR = dados_aeronave['wing']['AR']
+    e=dados_aeronave['wing']["e"]
+    S = dados_aeronave['wing']["S"]
+    # Dados aerodinamicos
+    Cd0 = dados_aeronave['coeficients']['CD0']
     K = 1/(np.pi*AR*e)
+    # Dados de peso
+    BOW = dados_aeronave['weights']["BOW"] * 9.81 # N
+    W_fuel = dados_aeronave['weights']['fuel'] *9.81 # N
+    # Dados de motor
+    eta = dados_aeronave["engine"]['eta'] 
+    TSFC = dados_aeronave["engine"]["SFC_cruise"] # N
+
+    ## Dados o climb
+    h0 = descend_dict['h0']
+    hf = descend_dict['hf']
+    W_fuel_init = descend_dict['W_fuel_init'] * 9.81 # N
+    vmin = descend_dict['vmin']
+    vmax = descend_dict['vmax']
+    dt = descend_dict['dt']
+    dT = descend_dict['dT']
+    Thrust_percent = descend_dict['Thrust_percent']
 
     W0 =  BOW + W_fuel_init # N
     W  =  BOW + W_fuel_init # N
-    Thrust_descent = Thrust0*Thrust_percent/100 # N thrust chute meu
 
     T0   =  Atmosphere(0).temperature
     P0   =  Atmosphere(0).pressure
@@ -428,6 +377,8 @@ def decend(dados_aeronave: dict, h0:float, hf:float, W_fuel_init:float, vmin:flo
 
     # Cria um range de velocidades a serem avaliadas
     V = np.linspace(vmin, vmax+1, 10)
+    Thrust0 = eta * dados_aeronave["engine"]["power"]/V
+    Thrust_descent = Thrust0*Thrust_percent/100 # N thrust chute meu
 
     tempo_total=0
     distancia_descida = 0
@@ -436,7 +387,7 @@ def decend(dados_aeronave: dict, h0:float, hf:float, W_fuel_init:float, vmin:flo
     while h > hf*0.3048:
         # Corrige a variação de temperatura ISA
         T = Atmosphere(h).temperature  # altitude em metros
-        h_ind = h / (T + dT) *T
+        h_ind = h * T/(T + dT)
 
         # Calculo da densidade relativa
         rho = Atmosphere(h_ind).density
@@ -450,84 +401,85 @@ def decend(dados_aeronave: dict, h0:float, hf:float, W_fuel_init:float, vmin:flo
         # Variação do empuxo
         Thrust = Thrust_descent*sigma**0.7 # empuxo para menor q troposfera
         if h > 36089:
-          Thrust = 1.439*Thrust_descent*sigma # empuxo para altitudes maiores q troposfera
+            Thrust = 1.439*Thrust_descent*sigma # empuxo para altitudes maiores q troposfera
         
-        # Calculo do consumo
-        consumo=TSFC*Thrust*dt #  com fator de aceleração
-        W -= consumo  # com fator de aceleração
         
         # Calculo dos coeficientes
-        Cl = (2 * (W/S))/( rho * V**2)
+        Cl = (2 * (W/S))/(rho * V**2)
         Cd = Cd0 + K * (Cl**2)
-        D = (0.5 * rho * S * V**2) * Cd
+        E = Cl/Cd
 
         ## Calculo da razão de descidaw
-        gamma = np.arcsin((Thrust-D)/W)
+        A = (1 - (Thrust/W)**2)
+        B = 2/E
+        C = ((1/E**2) - (Thrust/W)**2)
+        delta = B**2 - 4*A*C
+        gamma = np.arctan((-B - np.sqrt(delta))/(2*A))
         RD = V*np.sin(gamma)
         RD = RD/(1+f_a)
-        index = np.where(RD == min(RD)) # pega o index do vetor RC em que RC é máximo
+        index = np.where(RD == max(RD)) # pega o index do vetor RC em que RC é máximo
         v_rdmin = V[index][0]           # pega a velocidade em que RD é máximo
         gamma_rdmin = gamma[index][0]   # pega o gama em que RC é máximo
         v_horizontal = v_rdmin*np.cos(gamma_rdmin) #calcula a velocidade horizontal em que RC é máximo para determinada faixa de altitude
         v_vertical   = v_rdmin*np.sin(gamma_rdmin)
 
+        # Calculo do consumo
+        consumo=TSFC*Thrust*dt #  com fator de aceleração
+        W -= consumo[index][0]  # com fator de aceleração
+        
         tempo_total+= dt
         distancia_descida += v_horizontal*dt
         h += v_vertical*dt
 
-    print(np.rad2deg(gamma))
     consumo_descida = W0 - W
 
-    return  tempo_total, consumo_descida, distancia_descida, h/0.3048
+    return  tempo_total, consumo_descida/9.81, distancia_descida, h/0.3048
 
-# TErminar
-def loitter(dados_aeronave):
+
+def loitter(dados_aeronave: dict, loitter_dict: dict):
 
     ## Dados da aeronave
-    AR= dados_aeronave["AR"]
-    e = dados_aeronave["e"]
-    Cd0 = dados_aeronave["CD0"]
-
-    MTOW = dados_aeronave["MTOW"] # N
-    Thrust0 = dados_aeronave["thrust"] # N
-    S = dados_aeronave["A"]
-    TSFC = dados_aeronave["TSFC"]
-    BOW = dados_aeronave["BOW"]
+    # Dados Asa
+    AR = dados_aeronave['wing']['AR']
+    e=dados_aeronave['wing']["e"]
+    S = dados_aeronave['wing']["S"]
+    # Dados aerodinamicos
+    Cd0 = dados_aeronave['coeficients']['CD0']
     K = 1/(np.pi*AR*e)
+    # Dados de peso
+    BOW = dados_aeronave['weights']["BOW"] * 9.81 # N
+    W_fuel = dados_aeronave['weights']['fuel'] *9.81 # N
+    # Dados de motor
+    TSFC = dados_aeronave["engine"]["SFC_cruise"] # N
 
-
+    h_loitter = loitter_dict['h_loitter']
+    loitter_time = loitter_dict['loitter_time']
+    dT = loitter_dict['dT']
+    dt = loitter_dict['dt']
 
     # Condições atmosféricas
-    isa = +15
-    altitude = 10000*0.3058 # 10000 pés
-    temp = Atmosphere(altitude).temperature - isa #Dados atmosféricos da biblioteca Ambiance
-    a = Atmosphere(altitude).speed_of_sound #Dados atmosféricos da biblioteca Ambiance
+    T = Atmosphere(h_loitter * 0.3048).temperature[0]   
+    altitude = h_loitter * 0.3058 * T/(T + dT)
     P = Atmosphere(altitude).pressure #Dados atmosféricos da biblioteca Ambiance
     rho =  Atmosphere(altitude).density
 
-
     # Peso total e de combustível ao se iniciar cruzeiro
+    W =  BOW + W_fuel
+    W_init = W
 
-
-    W =  BOW + 14100 + 9350 # N# Peso total no inicio da espera precisa mudar aqui
-    Win = W
-
-
-    # Cd e eficiência no início do cruzeiro
-
-
-    dt = 10 # faixa de tempo de 100s para processo iterativo
-    tempo = list(range(0,30*60,dt))
+    tempo = list(range(0,loitter_time,dt))
 
     for t in tempo:
-      V_emax = np.sqrt(2*W/rho/S)*np.sqrt(np.sqrt(K/Cd0))
-      Cl = (2 * (W/S))/( rho*V_emax**2)
-      Cd = Cd0 + K * (Cl**2)
-      E = Cl/Cd # Eficiência aerodinâmica
-      T = W/E # corrigindo o empuxo
-      W = W - TSFC*dt*T # peso da aeronave a cada faixa de tempo dt percorrida
+        V_emax = np.sqrt(2*W/rho/S)*np.sqrt(np.sqrt(K/Cd0))
+        Cl = (2 * (W/S))/(rho*V_emax**2)
+        Cd = Cd0 + K * (Cl**2)
+        E = Cl/Cd # Eficiência aerodinâmica
+        Thrust0 = W/E # corrigindo o empuxo
+        W = W - TSFC*dt*Thrust0 # peso da aeronave a cada faixa de tempo dt percorrida
 
-    print('gasto total de combustível [N] =', Win-W)
+    consumo_loitter = (W_init-W)/9.81
+
+    return consumo_loitter
 
 
 def land(dados_aeronave: dict, pouso: dict):
@@ -577,11 +529,3 @@ def land(dados_aeronave: dict, pouso: dict):
 
     return [SA, SF, SFR, SB]
 
-
-def main()->None:
-   '''Main code'''
-
-
-
-if __name__ == '__main__':
-   main()

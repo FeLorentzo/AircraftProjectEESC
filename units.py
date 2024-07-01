@@ -21,6 +21,8 @@ def in2m(inches):
 def knot2ms(knot):
     return 0.514 * knot
 
+def ms2knot(ms):
+    return ms / 0.514
 
 def kgf2n(kgf):
     return 9.807 * kgf
