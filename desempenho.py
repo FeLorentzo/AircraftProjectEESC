@@ -53,7 +53,7 @@ def takeoff(dados_aeronave:dict, takeoff_data:dict):
     #   s(t) = \int_{v_i}^{v_f}(V/a)dV = 0.5 * \int_{v_i}^{v_f}(1/a)d(V**2)
     #   s(t) = (1/2gKA).ln((KT + KA.(V_f)**2)/(KT + KA.(V_i)**2))
 
-    SG = (1/(2*g*KA)) * np.log((KT - KA*(V_f)**2)/(KT))
+    SG = -(1/(2*g*KA)) * np.log((KT - KA*(V_f)**2)/(KT))
 
     ### Transição (V: 1.1*V_stall - 1.2*V_stall)
     # Def: n = 1.2
@@ -482,50 +482,72 @@ def loitter(dados_aeronave: dict, loitter_dict: dict):
     return consumo_loitter
 
 
-def land(dados_aeronave: dict, pouso: dict):
+def land(dados_aeronave: dict, land_dict: dict):
+    '''
+    Implementação baseada na teoria apresentada por Raymer.
+    Feita de modo a ser compatível com a FAR 23.
+
+    Inputs:
+    dados_aeronave (dict): Dicionário contendo os dados da aeronave, incluindo peso, área da asa, etc.
+    gamma_descent (float): Ângulo de subida em radianos.
+    Cl_run (float): Coeficiente de sustentação durante a corrida de decolagem.
+    mi (float): Coeficiente de atrito entre o trem de pouso livre e a superfície.
+    mi_break (float): Coeficiente de atrito entre o trem de pouso freado e a superfície.
+    rho (float): Densidade do ar em kg/m^3.
+    g (float): Aceleração devido à gravidade em m/s^2.
+    h_obstacle (float): Altura do obstaculo em m.
+    rev (float): Porcentagem da tração maxima para reversor.
+
+    Returns:
+    dists (list): Distancias.
+    '''
+
     # Decomposição dos dados
     S = dados_aeronave['wing']['S']
-    T = dados_aeronave['engine']["thrust cruise"]
-    W = dados_aeronave['MTOW']
+    W = dados_aeronave['weights']['MTOW'] * 9.81
     CD0 = dados_aeronave['coeficients']['CD0']
-    K = 1/(np.pi * dados_aeronave['AR'] * dados_aeronave['e'])
+    V_stall = dados_aeronave['speeds']['V_stall']
+    # Dados de motor
+    eta = dados_aeronave["engine"]['eta'] 
 
-    gamma = pouso['gamma_climb']
-    CL = pouso['Cl_run']
-    mi = pouso['mi']
-    mi_break = pouso['mi_break']
-    rho = pouso['rho']
-    g = pouso['g']
-    V_stall = pouso['V_stall']
-    h_obstacle = pouso['h_obstacle']
-    rev = pouso['reversores']
+    K = 1/(np.pi * dados_aeronave['wing']['AR'] * dados_aeronave['wing']['e'])
+
+    gamma = land_dict['gamma_descent']
+    CL = land_dict['Cl_run']
+    mi = land_dict['mi']
+    mi_break = land_dict['mi_break']
+    rho = land_dict['rho']
+    h_obstacle = land_dict['h_obstacle']
+    rev = land_dict['reversores']
+
+    V = 1.15 * V_stall
+    T = eta * dados_aeronave["engine"]["power"]/V
 
     ### Flare
     # Def: n = 1.2
     n = 1.2
     # n = 1 + V_tr**2/R.g
-    R = (1.2*V_stall**2)/(g*(n-1))
+    R = (1.2*V**2)/(9.81*(n-1))
     h_f = R * (1 - np.cos(np.deg2rad(gamma)))
     SF = np.sqrt(R**2 - (R - h_f)**2)
 
     ### Aproach
-    SA = (h_obstacle - h_f)/np.tan(np.rad2deg(gamma))
+    SA = -(h_obstacle - h_f)/np.tan(np.rad2deg(gamma))
 
     ### Ground roll
     # Break free for 3s
-    V = 1.15 * V_stall
     SFR =  0
     KT = (0/W - mi)
-    KA = (rho/(2*W/S))*(CD0 + K.CL**2  - mi.CL)
+    KA = (rho/(2*W/S))*(CD0 + K*CL**2  - mi*CL)
     for dt in np.diff(np.linspace(0,3,100)):
-        a = g * [KT - KA*V**2]
+        a = 9.81 * (KT - KA*V**2)
         SFR = SFR + V * dt + 0.5 * a * dt**2
         V = V + a * dt
 
-    KT = (rev * T/W - mi_break)
-    KA = (rho/(2*W/S))*(CD0 + K.CL**2  - mi_break.CL)
+    KT = (-rev * T/W - mi_break)
+    KA = (rho/(2*W/S))*(CD0 + K*CL**2  - mi_break*CL)
     # Break roll
-    SB = (1/(2*g*KA)) * np.ln((KT)/(KT - KA*(V)**2))
+    SB = -(1/(2*9.81*KA)) * np.log((KT)/(KT - KA*(V)**2))
 
     return [SA, SF, SFR, SB]
 
