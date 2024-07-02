@@ -1,0 +1,28 @@
+control = {
+    "aileron": {
+        "root_chord": 0.3, # of chord
+        "tip_chord" : 0.3, # of chord
+        "min_angle" : 25 , # down
+        "max_angle" : 15 , # up
+    },
+    "elevator": {
+        "root_chord": 0.3, # of chord
+        "tip_chord" : 0.3, # of chord
+        "min_angle" : 25 , # down
+        "max_angle" : 15 , # up
+    },
+    "rudder": {
+        "root_chord": 0.3, # of chord
+        "tip_chord" : 0.3, # of chord
+        "min_angle" : 15 , # left
+        "max_angle" : 15 , # right
+    },
+    "flap": {
+        "root_chord": 0.20  , # of chord
+        "tip_chord" : 0.25  , # of chord
+        "CL_plus"   : 0.6   ,
+        "CD_plus"   : 0.001 ,
+        "CM_plus"   : 0.3   ,
+        "detents"   : [0, 10, 15, 20], # deg
+    },
+}
