@@ -27,8 +27,8 @@
         <Sections>
             <Section>
                 <y_position>  0.000</y_position>
-                <Chord>  1.732</Chord>
-                <xOffset> -0.433</xOffset>
+                <Chord>  1.832</Chord>
+                <xOffset> -0.458</xOffset>
                 <Dihedral>  0.000</Dihedral>
                 <Twist>  0.000</Twist>
                 <x_number_of_panels>7</x_number_of_panels>
@@ -40,7 +40,7 @@
             </Section>
             <Section>
                 <y_position>  3.250</y_position>
-                <Chord>  1.039</Chord>
+                <Chord>  1.160</Chord>
                 <xOffset>  0.612</xOffset>
                 <Dihedral>  0.000</Dihedral>
                 <Twist>  0.000</Twist>
