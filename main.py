@@ -156,6 +156,7 @@ print(f'Payload: {w_pay}')
 print(f"S_ref: {aircraft['wing']['S']:.3f}")
 
 aircraft = acd.estimate_aerodynamic_areas(aircraft)
+aircraft = acd.estimate_aerodynamic_areas(aircraft)
 
 print(
 f"""
@@ -220,7 +221,8 @@ fus_param = {
     'S_wet': 95.9,
     'diameter': 1.6,
     'Percent_laminar': 0,
-    'material': "Aerospace aluminum", # must be compatible with weight_estimation_data.json file
+    # must be compatible with weight_estimation_data.json file
+    'material': "Aerospace aluminum",
 }
 
 aircraft['wing'].update(wing_param)
@@ -254,6 +256,7 @@ for key, component in aircraft.items():
         Re = rho * aircraft['definitions']['V_cruise'] * component['length'] / mu
     elif 'CMA' in component:
         cut = acd.Re_cutoff(component['CMA'])
+        cut = acd.Re_cutoff(component['CMA'])
         Re = rho * aircraft['definitions']['V_cruise'] * component['CMA'] / mu
     else:
         continue
@@ -271,6 +274,7 @@ for key, component in aircraft.items():
 
 M = aircraft['definitions']['V_cruise']/vel_som
 
+aircraft = acd.compute_FF(aircraft, M)
 aircraft = acd.compute_FF(aircraft, M)
 
 print(f"""
