@@ -3,4 +3,8 @@ ambiance.py
 .idea
 .venv
 .vscode
+.vscode
+.venv
+.idea
+ambiance.py
 __pycache__
