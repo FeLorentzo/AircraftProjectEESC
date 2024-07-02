@@ -138,6 +138,7 @@ class Airplane:
 
         alphar = np.radians(alpha)
         epsr = np.radians(self.eps0) + alphar*self.eps_alpha
+        i_mot_rad = np.radians(self.motor.incid)
         cs = np.cos(alphar)
         sn = np.sin(alphar)
 
@@ -253,32 +254,56 @@ class Airplane:
 
         coeffs.static_margin = -coeffs.CM_alpha/coeffs.CL_alpha
 
+        V_h = dx_h * self.hstab.S / self.S
+        coeffs.CT = (coeffs.thrust)/(0.5*rho*self.S*vel**2)
+        coeffs.CT_u = (self.motor.dTdV)/(0.5*rho*self.S*vel) - 2*coeffs.CT
+        coeffs.CX_alpha = -coeffs.CD_alpha + coeffs.CL
+        coeffs.CZ_alpha = -coeffs.CL_alpha - coeffs.CD
+        coeffs.CL_q = (1/2 + 2*dx_w)*coeffs.wing.CL_alpha + 2*V_h*ETA_H*coeffs_h.CL_alpha
+        coeffs.CX_q = 0.0
+        coeffs.CZ_q = -coeffs.CL_q
+        coeffs.Cm_q = -0.7*coeffs.wing.CL_alpha*(self.wing.AR*(2*(dx_w**2)+0.5*dx_w)/(self.wing.AR+2) + (1/24)*(
+            (self.wing.AR**3*np.tan(np.degrees(self.wing.sweep))**2) /
+            (self.wing.AR + 6*np.cos(np.degrees(self.wing.sweep)))
+        )+1/8) - 2*V_h*ETA_H*dx_h*coeffs_h.CL_alpha
+        coeffs.CL_alphadot = 2*coeffs_h.CL_alpha*V_h*self.eps_alpha*ETA_H
+        coeffs.CX_alphadot = 0
+        coeffs.CZ_alphadot = -coeffs.CL_alphadot
+        coeffs.Cm_alphadot = -2*coeffs_h.CL_alpha*V_h*self.eps_alpha*ETA_H*dx_h
+        coeffs.CX_u = coeffs.CT_u*np.cos(alphar + i_mot_rad)
+        coeffs.CZ_u = -coeffs.CT_u*np.sin(alphar + i_mot_rad)
+        coeffs.Cm_u = -coeffs.CT_u*dz_mot*np.cos(i_mot_rad) - coeffs.CT_u*dx_mot*np.sin(i_mot_rad)
         return coeffs
 
     def trim_coefficients(
-        self, alpha: float, vel: float, throttle: float, *, delta_hstab: float | None = None, 
-        rho: float = 1.0, num_iter: int = 3) -> AircraftCoefficients:        
+            self, alpha: float, vel: float, throttle: float, *, delta_hstab: float | None = None,
+            rho: float = 1.0, num_iter: int = 3) -> AircraftCoefficients:
         if delta_hstab is None:
             delta_hstab = 0.0
             trim_with_elev = False
         else:
             trim_with_elev = True
-            
+
         delta_elev = 0.0
         coeffs = self.coefficients(alpha, vel, throttle, delta_hstab, delta_elev, rho=rho)
-        
+
         for _ in range(num_iter):
             if trim_with_elev:
                 delta_elev -= float(np.degrees(coeffs.CM/coeffs.CM_deltae))
             else:
                 delta_hstab -= float(np.degrees(coeffs.CM/coeffs.CM_deltah))
             coeffs = self.coefficients(alpha, vel, throttle, delta_hstab, delta_elev, rho)
-            
+
         return coeffs
 
+
 if __name__ == "__main__":
+    import matplotlib.pyplot as plt
+    from matplotlib.colors import to_hex
+    import copy
+    
     # Output from 'polar_process.py'
-    #
+    
     # Wing Data:
     # CL0_w = 0.4516,  CD0_w = 0.0113,  CM0_w =-0.1241,  CL_min_w   =-0.9806,  CL_max_w   = 2.0300
 
@@ -290,8 +315,8 @@ if __name__ == "__main__":
     plane = Airplane(
         cg=MassProperties(
             x=-0.138,
-            z=0.0,
-            mass=45e+3,
+            z=-1.0,
+            mass=25e+3,
             Ixx=0.0,
             Iyy=0.0,
             Izz=0.0,
@@ -360,8 +385,8 @@ if __name__ == "__main__":
             k_fus=0.03,
         ),
         motor=Powerplant(
-            x=-1.0,
-            z=0.0,
+            x=0.0,
+            z=-0.1,
             T0=20000,
             dTdV=-50,
             incid=0.0
@@ -369,31 +394,73 @@ if __name__ == "__main__":
         CD_extra=0.005
     )
 
-    coeffs_trim = plane.trim_coefficients(5, 100, 1.0, delta_hstab=0.0)
-    print(f"elev_use: {100*coeffs_trim.elev_utilization:.2f}%")
-    print(f"static_margin: {100*coeffs_trim.static_margin:.2f}%")
-    # print(coeffs_trim.CM)
-    # for attr_name, attr_value in coeffs_trim.__dict__.items():
-    #     if isinstance(attr_value, (SurfaceCoefficients, AircraftCoefficients)):
-    #         for key, value in attr_value.__dict__.items():
-    #             print(f"{attr_name}.{key} =  {value:.4f}")
-    #     else:
-    #         print(f"{attr_name} = {attr_value:.4f}")
-
-
-
-# derivadas de estab
-# dinamica por matriz A
-# latero-direcional
-# helice
-
-# === === === plots === === ===
-
-# escolha de incid_h == == == ==
-# ábaco de trimagem com Hstab
-# ábaco de trimagem com Elev
-
-# passeio do cg == == == ==
-# UH por xcg
-# ME por xcg
-
+    # # Elevator trim
+    # deflections = np.array([-30, -20, -10, 0, 10, 20])
+    # alphas = np.linspace(-10, 20, 100)
+    # cmap = plt.get_cmap('jet') # type: ignore
+    # colors = [to_hex(cmap(i)) for i in np.linspace(1.0, 0.0, len(deflections))]
+    # v = 100
+    # for i, delta in enumerate(deflections):
+    #     CL_data = []
+    #     CM_data = []
+    #     for alpha in alphas:
+    #         coeffs = plane.coefficients(alpha, 100, 1.0, 0.0, delta)
+    #         CL_data.append(coeffs.CL)
+    #         CM_data.append(coeffs.CM)
+    #     plt.plot(CL_data, CM_data, label=f'{int(delta)} deg', color=colors[i], alpha=0.6)
+    # plt.grid()
+    # plt.legend(title='elevator deflection')
+    # plt.xlabel('CL')
+    # plt.ylabel('CM')
+    # plt.tight_layout()
+    # plt.ylim([-1.0, 1.0])
+    # plt.show()
+    
+    
+    # # stabilizer trim
+    # deflections = np.array([-15, -10, -5, 0, 5, 10])
+    # alphas = np.linspace(-10, 20, 100)
+    # cmap = plt.get_cmap('jet') # type: ignore
+    # colors = [to_hex(cmap(i)) for i in np.linspace(1.0, 0.0, len(deflections))]
+    # v = 100
+    # for i, delta in enumerate(deflections):
+    #     CL_data = []
+    #     CM_data = []
+    #     for alpha in alphas:
+    #         coeffs = plane.coefficients(alpha, 100, 1.0, delta_hstab=delta, delta_elev=0.0)
+    #         CL_data.append(coeffs.CL)
+    #         CM_data.append(coeffs.CM)
+    #     plt.plot(CL_data, CM_data, label=f'{int(delta)} deg', color=colors[i], alpha=0.6)
+    # plt.grid()
+    # plt.legend(title='hstab deflection')
+    # plt.xlabel('CL')
+    # plt.ylabel('CM')
+    # plt.tight_layout()
+    # plt.ylim([-1.0, 1.0])
+    # plt.show()
+    
+    # # CG_position_sweep
+    # cg_positions = np.linspace(-2.0, 0.3, 100)
+    # elev_use_data = []
+    # static_margin_data = []
+    # for cgx in cg_positions:
+    #     current_plane = copy.deepcopy(plane)
+    #     current_plane.cg.x = cgx
+    #     coeffs = current_plane.trim_coefficients(5, 100, 1.0, delta_hstab=0.0)
+    #     elev_use_data.append(coeffs.elev_utilization)
+    #     static_margin_data.append(coeffs.static_margin)
+    # plt.axhline(y=0.9, color='black', linestyle='--', zorder=-10)
+    # plt.plot(cg_positions, elev_use_data)
+    # plt.xlabel('x_cg')
+    # plt.ylabel(r'$elevator \quad \delta / \delta_{max} \quad at \quad \delta_h=0.0$')
+    # plt.ylim([0.0, 1.0])
+    # plt.grid()
+    # plt.show()
+    # #
+    # plt.axhline(y=0.1, color='black', linestyle='--', zorder=-10)
+    # plt.plot(cg_positions, static_margin_data)
+    # plt.xlabel('x_cg em relação ao CA')
+    # plt.ylabel('Margem Estática')
+    # plt.ylim([0.0, 1.0])
+    # plt.grid()
+    # plt.show()

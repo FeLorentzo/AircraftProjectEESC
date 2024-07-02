@@ -21,7 +21,6 @@ class SurfaceCoefficients:
     CL_dincid: float = 0.0
     CD_dincid: float = 0.0
     CM_dincid: float = 0.0
-    
 
 @dataclass
 class AircraftCoefficients:
@@ -53,6 +52,22 @@ class AircraftCoefficients:
     elev_utilization: float = np.nan
     hstab_utilization: float = np.nan
     static_margin: float = np.nan
+    #
+    CT: float = np.nan
+    CT_u: float = np.nan
+    CX_alpha: float = np.nan
+    CZ_alpha: float = np.nan
+    CL_q: float = np.nan
+    CX_q: float = np.nan
+    CZ_q: float = np.nan
+    Cm_q: float = np.nan
+    CL_alphadot: float = np.nan
+    CX_alphadot: float = np.nan
+    CZ_alphadot: float = np.nan
+    Cm_alphadot: float = np.nan
+    CX_u: float = np.nan
+    CZ_u: float = np.nan
+    Cm_u: float = np.nan
     
     def __post_init__(self):
         wing = SurfaceCoefficients()
