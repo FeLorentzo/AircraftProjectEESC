@@ -314,7 +314,7 @@ if __name__ == "__main__":
     # CL0_v = 0.0000,  CD0_v = 0.0051,  CM0_v = 0.0000,  CL_delta_v = 1.5204,  CD_delta_v = 0.0864,  CM_delta_v = -0.8348
     plane = Airplane(
         cg=MassProperties(
-            x=-0.138,
+            x=-0.43,
             z=-1.0,
             mass=25e+3,
             Ixx=0.0,
@@ -394,31 +394,31 @@ if __name__ == "__main__":
         CD_extra=0.005
     )
 
-    # # Elevator trim
-    # deflections = np.array([-30, -20, -10, 0, 10, 20])
-    # alphas = np.linspace(-10, 20, 100)
-    # cmap = plt.get_cmap('jet') # type: ignore
-    # colors = [to_hex(cmap(i)) for i in np.linspace(1.0, 0.0, len(deflections))]
-    # v = 100
-    # for i, delta in enumerate(deflections):
-    #     CL_data = []
-    #     CM_data = []
-    #     for alpha in alphas:
-    #         coeffs = plane.coefficients(alpha, 100, 1.0, 0.0, delta)
-    #         CL_data.append(coeffs.CL)
-    #         CM_data.append(coeffs.CM)
-    #     plt.plot(CL_data, CM_data, label=f'{int(delta)} deg', color=colors[i], alpha=0.6)
-    # plt.grid()
-    # plt.legend(title='elevator deflection')
-    # plt.xlabel('CL')
-    # plt.ylabel('CM')
-    # plt.tight_layout()
-    # plt.ylim([-1.0, 1.0])
-    # plt.show()
+    # Elevator trim
+    deflections = np.array([-30, -20, -10, 0, 10, 20])
+    alphas = np.linspace(-10, 20, 100)
+    cmap = plt.get_cmap('jet') # type: ignore
+    colors = [to_hex(cmap(i)) for i in np.linspace(1.0, 0.0, len(deflections))]
+    v = 100
+    for i, delta in enumerate(deflections):
+        CL_data = []
+        CM_data = []
+        for alpha in alphas:
+            coeffs = plane.coefficients(alpha, 100, 1.0, -8, delta)
+            CL_data.append(coeffs.CL)
+            CM_data.append(coeffs.CM)
+        plt.plot(CL_data, CM_data, label=f'{int(delta)} deg', color=colors[i], alpha=0.6)
+    plt.grid()
+    plt.legend(title='elevator deflection')
+    plt.xlabel('CL')
+    plt.ylabel('CM')
+    plt.tight_layout()
+    plt.ylim([-1.0, 1.0])
+    plt.show()
     
     
-    # # stabilizer trim
-    # deflections = np.array([-15, -10, -5, 0, 5, 10])
+    # stabilizer trim
+    # deflections = np.array([-10, -5, 0, 5, 10])
     # alphas = np.linspace(-10, 20, 100)
     # cmap = plt.get_cmap('jet') # type: ignore
     # colors = [to_hex(cmap(i)) for i in np.linspace(1.0, 0.0, len(deflections))]
@@ -440,25 +440,29 @@ if __name__ == "__main__":
     # plt.show()
     
     # # CG_position_sweep
-    # cg_positions = np.linspace(-2.0, 0.3, 100)
-    # elev_use_data = []
-    # static_margin_data = []
-    # for cgx in cg_positions:
-    #     current_plane = copy.deepcopy(plane)
-    #     current_plane.cg.x = cgx
-    #     coeffs = current_plane.trim_coefficients(5, 100, 1.0, delta_hstab=0.0)
-    #     elev_use_data.append(coeffs.elev_utilization)
-    #     static_margin_data.append(coeffs.static_margin)
+    # cg_positions = np.linspace(-0.6, 0.3, 100)
+    # static_margin_plot = []
+    # for delta_h in [5, 0, -5, -10]:
+    #     static_margins = []
+    #     elev_use_data = []
+    #     for cgx in cg_positions:
+    #         current_plane = copy.deepcopy(plane)
+    #         current_plane.cg.x = cgx
+    #         coeffs = current_plane.trim_coefficients(23, 100.0, 1.0, delta_hstab=delta_h)
+    #         elev_use_data.append(coeffs.elev_utilization)
+    #         static_margins.append(coeffs.static_margin)
+    #     static_margin_plot.append(static_margins)
+    #     plt.plot(cg_positions, elev_use_data, label=f'{delta_h}')
     # plt.axhline(y=0.9, color='black', linestyle='--', zorder=-10)
-    # plt.plot(cg_positions, elev_use_data)
     # plt.xlabel('x_cg')
     # plt.ylabel(r'$elevator \quad \delta / \delta_{max} \quad at \quad \delta_h=0.0$')
     # plt.ylim([0.0, 1.0])
+    # plt.legend(title='delta h_stab')
     # plt.grid()
     # plt.show()
-    # #
+    
     # plt.axhline(y=0.1, color='black', linestyle='--', zorder=-10)
-    # plt.plot(cg_positions, static_margin_data)
+    # plt.plot(cg_positions, static_margin_plot[0])
     # plt.xlabel('x_cg em relação ao CA')
     # plt.ylabel('Margem Estática')
     # plt.ylim([0.0, 1.0])
