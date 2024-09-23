@@ -1,0 +1,737 @@
+{
+    "aircraft_data": {
+        "Hang glider": {
+            "Empty weight (%)": 25,
+            "Removable weight (%)": 75,
+            "Payload weight (%)": 75,
+            "Fuel weight (%)": 0
+        },
+        "Glider/sailplane": {
+            "Empty weight (%)": 60,
+            "Removable weight (%)": 40,
+            "Payload weight (%)": 40,
+            "Fuel weight (%)": 0
+        },
+        "Human-powered": {
+            "Empty weight (%)": 30,
+            "Removable weight (%)": 70,
+            "Payload weight (%)": 70,
+            "Fuel weight (%)": 0
+        },
+        "Model RC": {
+            "Empty weight (%)": 40,
+            "Removable weight (%)": 60,
+            "Payload weight (%)": 53,
+            "Fuel weight (%)": 7
+        },
+        "Ultralight": {
+            "Empty weight (%)": 55,
+            "Removable weight (%)": 42,
+            "Payload weight (%)": 42,
+            "Fuel weight (%)": 3
+        },
+        "Single-engine GA": {
+            "Empty weight (%)": [
+                60,
+                82
+            ],
+            "Removable weight (%)": [
+                18,
+                40
+            ],
+            "Payload weight (%)": [
+                8,
+                30
+            ],
+            "Fuel weight (%)": 10
+        },
+        "Twin-engine GA": {
+            "Empty weight (%)": 62,
+            "Removable weight (%)": 38,
+            "Payload weight (%)": 16,
+            "Fuel weight (%)": 20
+        },
+        "Agriculture": {
+            "Empty weight (%)": 50,
+            "Removable weight (%)": 50,
+            "Payload weight (%)": 40,
+            "Fuel weight (%)": 10
+        },
+        "Subsonic transport": {
+            "Empty weight (%)": 48,
+            "Removable weight (%)": 52,
+            "Payload weight (%)": 26,
+            "Fuel weight (%)": 25
+        },
+        "Supersonic fighter": {
+            "Empty weight (%)": 43,
+            "Removable weight (%)": 57,
+            "Payload weight (%)": 40,
+            "Fuel weight (%)": 16
+        },
+        "Rutan Voyager": {
+            "Empty weight (%)": 23,
+            "Removable weight (%)": 77,
+            "Payload weight (%)": 5,
+            "Fuel weight (%)": 72
+        }
+    },
+    "aircraft_components": {
+        "Hang glider": {
+            "Wing (%)": 20,
+            "Fuselage (%)": 5,
+            "Tail (horizontal and vertical) (%)": 0,
+            "Landing gear (%)": 0,
+            "Structure (%)": 25
+        },
+        "Glider/sailplane": {
+            "Wing (%)": 30,
+            "Fuselage (%)": 23,
+            "Tail (horizontal and vertical) (%)": 3,
+            "Landing gear (%)": 2,
+            "Structure (%)": 58
+        },
+        "Human-powered": {
+            "Wing (%)": 9,
+            "Fuselage (%)": 10,
+            "Tail (horizontal and vertical) (%)": 2,
+            "Landing gear (%)": 3,
+            "Structure (%)": 23
+        },
+        "Model RC": {
+            "Wing (%)": 14,
+            "Fuselage (%)": 11,
+            "Tail (horizontal and vertical) (%)": 2,
+            "Landing gear (%)": 4,
+            "Structure (%)": 32
+        },
+        "Ultralight": {
+            "Wing (%)": 15,
+            "Fuselage (%)": 9,
+            "Tail (horizontal and vertical) (%)": 3,
+            "Landing gear (%)": 5,
+            "Structure (%)": 32
+        },
+        "Single-engine GA": {
+            "Wing (%)": 13,
+            "Fuselage (%)": 11,
+            "Tail (horizontal and vertical) (%)": 2,
+            "Landing gear (%)": 4,
+            "Structure (%)": 30
+        },
+        "Twin-engine GA": {
+            "Wing (%)": 14,
+            "Fuselage (%)": 11,
+            "Tail (horizontal and vertical) (%)": 2,
+            "Landing gear (%)": 4,
+            "Structure (%)": 31
+        },
+        "Agriculture": {
+            "Wing (%)": 10,
+            "Fuselage (%)": 9,
+            "Tail (horizontal and vertical) (%)": 2,
+            "Landing gear (%)": 4,
+            "Structure (%)": 25
+        },
+        "Subsonic transport": {
+            "Wing (%)": 10,
+            "Fuselage (%)": 8,
+            "Tail (horizontal and vertical) (%)": 2,
+            "Landing gear (%)": 4,
+            "Structure (%)": 24
+        },
+        "Supersonic fighter": {
+            "Wing (%)": 8,
+            "Fuselage (%)": 7,
+            "Tail (horizontal and vertical) (%)": 2,
+            "Landing gear (%)": 3,
+            "Structure (%)": 20
+        }
+    },
+    "wing_data": {
+        "Home-built prop-driven": {
+            "Wing area (m^2)": 3.5,
+            "Wing mass (kg)": 39.5,
+            "Wing mass (kg) / Wing area (m^2)": 11.3
+        },
+        "Single-engine prop GA": {
+            "Wing area (m^2)": 16.2,
+            "Wing mass (kg)": 102.5,
+            "Wing mass (kg) / Wing area (m^2)": 6.3
+        },
+        "Twin-engine prop GA": {
+            "Wing area (m^2)": 22.24,
+            "Wing mass (kg)": 390,
+            "Wing mass (kg) / Wing area (m^2)": 17.5
+        },
+        "Business twin-jet": {
+            "Wing area (m^2)": 75.21,
+            "Wing mass (kg)": 2890,
+            "Wing mass (kg) / Wing area (m^2)": 38.5
+        },
+        "Jet transport": {
+            "Wing area (m^2)": 260,
+            "Wing mass (kg)": 20017,
+            "Wing mass (kg) / Wing area (m^2)": 77
+        },
+        "Large cargo": {
+            "Wing area (m^2)": 576,
+            "Wing mass (kg)": 45366,
+            "Wing mass (kg) / Wing area (m^2)": 76.8
+        },
+        "Fighter": {
+            "Wing area (m^2)": 38,
+            "Wing mass (kg)": 1723,
+            "Wing mass (kg) / Wing area (m^2)": 45.3
+        }
+    },
+    "wing_structural_conditions": {
+        "GA, no engine, no fuel tank in the wing": {
+            "K_p": [
+                0.0011,
+                0.0013
+            ]
+        },
+        "GA, no engine on the wing, fuel tank in the wing": {
+            "K_p": [
+                0.0014,
+                0.0018
+            ]
+        },
+        "GA, engine installed on the wing, no fuel tank in the wing": {
+            "K_p": [
+                0.0025,
+                0.003
+            ]
+        },
+        "GA, engine installed on the wing, fuel tank in the wing": {
+            "K_p": [
+                0.003,
+                0.0035
+            ]
+        },
+        "Home-built": {
+            "K_p": [
+                0.0012,
+                0.002
+            ]
+        },
+        "Transport, cargo, airliner (engines attached to the wing)": {
+            "K_p": [
+                0.0035,
+                0.004
+            ]
+        },
+        "Transport, cargo, airliner (engines not attached to the wing)": {
+            "K_p": [
+                0.0025,
+                0.003
+            ]
+        },
+        "Supersonic fighter, few light stores under wing": {
+            "K_p": [
+                0.004,
+                0.006
+            ]
+        },
+        "Supersonic fighter, several heavy stores under wing": {
+            "K_p": [
+                0.009,
+                0.012
+            ]
+        },
+        "Remotely controlled model": {
+            "K_p": [
+                0.001,
+                0.0015
+            ]
+        }
+    },
+    "engineering_materials": {
+        "Aerospace aluminum": {
+            "Density (kg/m^3)": 2711
+        },
+        "Fiberglass/epoxy": {
+            "Density (kg/m^3)": [
+                1800,
+                1850
+            ]
+        },
+        "Graphite/epoxy": {
+            "Density (kg/m^3)": [
+                1520,
+                1630
+            ]
+        },
+        "Low-density foam": {
+            "Density (kg/m^3)": [
+                16,
+                30
+            ]
+        },
+        "High-density foam": {
+            "Density (kg/m^3)": [
+                50,
+                80
+            ]
+        },
+        "Steel alloys": {
+            "Density (kg/m^3)": 7747
+        },
+        "Titanium alloys": {
+            "Density (kg/m^3)": 4428
+        },
+        "Balsa wood": {
+            "Density (kg/m^3)": 160
+        },
+        "Plastics (including Monokote)": {
+            "Density (kg/m^3)": [
+                900,
+                1400
+            ]
+        }
+    },
+    "tail_configurations": {
+        "GA, home-built conventional tail/canard": {
+            "K_HT": [
+                0.022,
+                0.028
+            ],
+            "K_VT": [
+                0.067,
+                0.076
+            ]
+        },
+        "GA, home-built T-tail/H-tail": {
+            "K_HT": [
+                0.03,
+                0.037
+            ],
+            "K_VT": [
+                0.078,
+                0.11
+            ]
+        },
+        "Transport conventional tail": {
+            "K_HT": [
+                0.02,
+                0.03
+            ],
+            "K_VT": [
+                0.035,
+                0.045
+            ]
+        },
+        "Transport T-tail": {
+            "K_HT": [
+                0.022,
+                0.033
+            ],
+            "K_VT": [
+                0.04,
+                0.05
+            ]
+        },
+        "Remotely controlled model": {
+            "K_HT": [
+                0.015,
+                0.02
+            ],
+            "K_VT": [
+                0.044,
+                0.06
+            ]
+        },
+        "Supersonic fighter": {
+            "K_HT": [
+                0.06,
+                0.08
+            ],
+            "K_VT": [
+                0.12,
+                0.15
+            ]
+        }
+    },
+    "kf_values": {
+        "General aviation, home-built": {
+            "K_f": [
+                0.002,
+                0.003
+            ]
+        },
+        "Unmanned aerial vehicle": {
+            "K_f": [
+                0.0021,
+                0.0026
+            ]
+        },
+        "Transport, cargo, airliner": {
+            "K_f": [
+                0.0025,
+                0.0032
+            ]
+        },
+        "Remotely controlled model": {
+            "K_f": [
+                0.0015,
+                0.0025
+            ]
+        },
+        "Supersonic fighter": {
+            "K_f": [
+                0.006,
+                0.009
+            ]
+        }
+    },
+    "klg_values": {
+        "General aviation, home-built": {
+            "K_LG": [
+                0.48,
+                0.62
+            ]
+        },
+        "Transport, cargo, airliner": {
+            "K_LG": [
+                0.28,
+                0.35
+            ]
+        },
+        "Supersonic fighter": {
+            "K_LG": [
+                0.31,
+                0.36
+            ]
+        },
+        "Remotely controlled model": {
+            "K_LG": [
+                0.35,
+                0.52
+            ]
+        }
+    },
+    "engine_comparison": {
+        "Human-powered": {
+            "SFC": 0,
+            "Engine cost": 1,
+            "Noise": 1,
+            "Specific weight": 1,
+            "Propulsive efficiency": 8,
+            "Maintainability": 10,
+            "Ceiling": 1,
+            "Aircraft speed": 1
+        },
+        "Electric": {
+            "SFC": 1,
+            "Engine cost": 2,
+            "Noise": 3,
+            "Specific weight": 2,
+            "Propulsive efficiency": 10,
+            "Maintainability": 9,
+            "Ceiling": 8,
+            "Aircraft speed": 2
+        },
+        "Solar-powered": {
+            "SFC": 0,
+            "Engine cost": 2,
+            "Noise": 2,
+            "Specific weight": 2,
+            "Propulsive efficiency": 9,
+            "Maintainability": 8,
+            "Ceiling": 9,
+            "Aircraft speed": 3
+        },
+        "Piston-prop": {
+            "SFC": 2,
+            "Engine cost": 3,
+            "Noise": 4,
+            "Specific weight": 5,
+            "Propulsive efficiency": 3,
+            "Maintainability": 5,
+            "Ceiling": 2,
+            "Aircraft speed": 5
+        },
+        "Turbojet": {
+            "SFC": 6,
+            "Engine cost": 6,
+            "Noise": 5,
+            "Specific weight": 8,
+            "Propulsive efficiency": 6,
+            "Maintainability": 1,
+            "Ceiling": 6,
+            "Aircraft speed": 8
+        },
+        "Turbofan": {
+            "SFC": 5,
+            "Engine cost": 9,
+            "Noise": 6,
+            "Specific weight": 9,
+            "Propulsive efficiency": 7,
+            "Maintainability": 2,
+            "Ceiling": 5,
+            "Aircraft speed": 7
+        },
+        "Turboprop": {
+            "SFC": 4,
+            "Engine cost": 7,
+            "Noise": 7,
+            "Specific weight": 6,
+            "Propulsive efficiency": 4,
+            "Maintainability": 4,
+            "Ceiling": 4,
+            "Aircraft speed": 6
+        },
+        "Turboshaft": {
+            "SFC": 3,
+            "Engine cost": 8,
+            "Noise": 8,
+            "Specific weight": 7,
+            "Propulsive efficiency": 5,
+            "Maintainability": 3,
+            "Ceiling": 3,
+            "Aircraft speed": 4
+        },
+        "Ramjet": {
+            "SFC": 8,
+            "Engine cost": 6,
+            "Noise": 8,
+            "Specific weight": 4,
+            "Propulsive efficiency": 2,
+            "Maintainability": 6,
+            "Ceiling": 7,
+            "Aircraft speed": 9
+        },
+        "Rocket": {
+            "SFC": 10,
+            "Engine cost": [
+                5,
+                8
+            ],
+            "Noise": 10,
+            "Specific weight": 3,
+            "Propulsive efficiency": 1,
+            "Maintainability": 7,
+            "Ceiling": 10,
+            "Aircraft speed": 10
+        }
+    },
+    "components_mass": {
+        "Side-stick": [
+            0.1,
+            0.2
+        ],
+        "Stick": [
+            0.5,
+            1
+        ],
+        "Yoke/wheel": [
+            1,
+            2
+        ],
+        "Parachute/Civil": [
+            4,
+            6
+        ],
+        "Parachute/Military": [
+            8,
+            20
+        ],
+        "Compass": [
+            0.3,
+            0.7
+        ],
+        "Tachometer": [
+            0.3,
+            0.7
+        ],
+        "Altimeter": [
+            0.3,
+            0.7
+        ],
+        "Airspeed indicator": [
+            0.3,
+            0.7
+        ],
+        "Clock": [
+            0.3,
+            0.7
+        ],
+        "Rate of climb": [
+            0.3,
+            0.7
+        ],
+        "Bank angle indicator": [
+            0.3,
+            0.7
+        ],
+        "Accelerometer": [
+            0.3,
+            0.7
+        ],
+        "GPS": [
+            0.3,
+            0.7
+        ],
+        "Gyroscope": [
+            0.5,
+            2
+        ],
+        "Display": [
+            1,
+            4
+        ]
+    },
+    "aircraft_mtow_equipment": {
+        "Cessna 172": {
+            "MTOW": 2200,
+            "AUP": null,
+            "Instruments/navigation": 7,
+            "Avionic": null,
+            "Hydraulic/pneumatic": 3,
+            "Electric": 41,
+            "Air conditioning/anti-ice": 4,
+            "Furnishings": 99
+        },
+        "Cessna 210": {
+            "MTOW": 2900,
+            "AUP": null,
+            "Instruments/navigation": 16,
+            "Avionic": null,
+            "Hydraulic/pneumatic": 4,
+            "Electric": 60,
+            "Air conditioning/anti-ice": 12,
+            "Furnishings": 116
+        },
+        "Cessna 310": {
+            "MTOW": 4830,
+            "AUP": null,
+            "Instruments/navigation": 46,
+            "Avionic": null,
+            "Hydraulic/pneumatic": null,
+            "Electric": 121,
+            "Air conditioning/anti-ice": 46,
+            "Furnishings": 154
+        },
+        "Beech 760": {
+            "MTOW": 7650,
+            "AUP": null,
+            "Instruments/navigation": 70,
+            "Avionic": 158,
+            "Hydraulic/pneumatic": null,
+            "Electric": 284,
+            "Air conditioning/anti-ice": 49,
+            "Furnishings": 169
+        },
+        "Cessna T-37": {
+            "MTOW": 6436,
+            "AUP": null,
+            "Instruments/navigation": 132,
+            "Avionic": 86,
+            "Hydraulic/pneumatic": 56,
+            "Electric": 194,
+            "Air conditioning/anti-ice": 69,
+            "Furnishings": 256
+        },
+        "Lockheed C-130": {
+            "MTOW": 151522,
+            "AUP": 466,
+            "Instruments/navigation": 665,
+            "Avionic": 2432,
+            "Hydraulic/pneumatic": 671,
+            "Electric": 2300,
+            "Air conditioning/anti-ice": 2168,
+            "Furnishings": 4765
+        },
+        "Gulfstream I": {
+            "MTOW": 33600,
+            "AUP": 355,
+            "Instruments/navigation": 97,
+            "Avionic": 99,
+            "Hydraulic/pneumatic": 235,
+            "Electric": 966,
+            "Air conditioning/anti-ice": 755,
+            "Furnishings": 415
+        },
+        "Fokker F-27": {
+            "MTOW": 39000,
+            "AUP": null,
+            "Instruments/navigation": 81,
+            "Avionic": 386,
+            "Hydraulic/pneumatic": 242,
+            "Electric": 835,
+            "Air conditioning/anti-ice": 1225,
+            "Furnishings": 2291
+        },
+        "MD DC-8": {
+            "MTOW": 328000,
+            "AUP": null,
+            "Instruments/navigation": 1271,
+            "Avionic": 1551,
+            "Hydraulic/pneumatic": 2196,
+            "Electric": 2398,
+            "Air conditioning/anti-ice": 3144,
+            "Furnishings": 14335
+        },
+        "MD DC-9/10": {
+            "MTOW": 91500,
+            "AUP": 818,
+            "Instruments/navigation": 719,
+            "Avionic": 914,
+            "Hydraulic/pneumatic": 714,
+            "Electric": 1663,
+            "Air conditioning/anti-ice": 1476,
+            "Furnishings": 7408
+        },
+        "Fokker F-28": {
+            "MTOW": 65000,
+            "AUP": 346,
+            "Instruments/navigation": 302,
+            "Avionic": 869,
+            "Hydraulic/pneumatic": 364,
+            "Electric": 1023,
+            "Air conditioning/anti-ice": 1074,
+            "Furnishings": 4030
+        },
+        "Airbus A-300": {
+            "MTOW": 302000,
+            "AUP": 983,
+            "Instruments/navigation": 377,
+            "Avionic": 1726,
+            "Hydraulic/pneumatic": 3701,
+            "Electric": 4923,
+            "Air conditioning/anti-ice": 3642,
+            "Furnishings": 13161
+        },
+        "Boeing 727-100": {
+            "MTOW": 160000,
+            "AUP": 60,
+            "Instruments/navigation": 756,
+            "Avionic": 1591,
+            "Hydraulic/pneumatic": 1418,
+            "Electric": 2142,
+            "Air conditioning/anti-ice": 1976,
+            "Furnishings": 10257
+        },
+        "Boeing 737-200": {
+            "MTOW": 100400,
+            "AUP": 836,
+            "Instruments/navigation": 625,
+            "Avionic": 956,
+            "Hydraulic/pneumatic": 837,
+            "Electric": 1066,
+            "Air conditioning/anti-ice": 1416,
+            "Furnishings": 6643
+        },
+        "Boeing 747-100": {
+            "MTOW": 710000,
+            "AUP": 1130,
+            "Instruments/navigation": 1909,
+            "Avionic": 4429,
+            "Hydraulic/pneumatic": 4471,
+            "Electric": 3348,
+            "Air conditioning/anti-ice": 3969,
+            "Furnishings": 37245
+        }
+    }
+}
